@@ -1,5 +1,9 @@
 package ru.itmo.ivt.apitestgenplugin.parser.file.impl;
 
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.newvfs.impl.VirtualFileImpl;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.media.ArraySchema;
@@ -18,9 +22,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static ru.itmo.ivt.apitestgenplugin.parser.file.ImportFixer.fixImports;
+
 public class PackagesManagerImpl implements PackagesManager {
     @Override
-    public void splitModelFilesByDirectories(Map<String, List<String>> modelsByControllers, String directory) {
+    public void splitModelFilesByDirectories(Map<String, List<String>> modelsByControllers, String directory, Project project) {
         File baseDir = new File(directory);
         if (!baseDir.exists() || !baseDir.isDirectory()) {
             throw new IllegalArgumentException("Base directory does not exist or is not a directory: " + directory);
@@ -50,7 +56,7 @@ public class PackagesManagerImpl implements PackagesManager {
                                 StandardCopyOption.REPLACE_EXISTING
                         );
                         System.out.println("Moved " + sourceFile.getName() + " to " + controllerDir.getName());
-                        fixModelImports(destFile);
+                        fixImports(project, VfsUtil.findFileByIoFile(destFile, true));
                     } catch (IOException e) {
                         System.err.println("Failed to move file " + sourceFile.getName() + ": " + e.getMessage());
                     }
@@ -59,10 +65,6 @@ public class PackagesManagerImpl implements PackagesManager {
                 }
             }
         }
-    }
-
-    private void fixModelImports(File modelFile) {
-
     }
 
     @Override

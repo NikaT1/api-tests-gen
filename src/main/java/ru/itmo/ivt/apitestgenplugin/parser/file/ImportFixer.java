@@ -13,10 +13,7 @@ public class ImportFixer {
         WriteCommandAction.runWriteCommandAction(project, () -> {
             PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
             if (psiFile != null) {
-                // Оптимизировать импорты (удалить неиспользуемые, добавить недостающие)
                 new OptimizeImportsProcessor(project, psiFile).run();
-
-                // Отформатировать код (опционально)
                 new ReformatCodeProcessor(project, psiFile, null, false).run();
             }
         });

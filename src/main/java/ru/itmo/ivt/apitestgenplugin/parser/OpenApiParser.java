@@ -1,5 +1,6 @@
 package ru.itmo.ivt.apitestgenplugin.parser;
 
+import com.intellij.openapi.project.Project;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
@@ -35,7 +36,7 @@ public class OpenApiParser {
 
     @SneakyThrows
     // TODO добавить опцию по переносу всего в schemas
-    public void fillContext() {
+    public void fillContext(Project project) {
         File outputDirectoryFile = new File(outputDirectory);
         SwaggerParseResult result = OPEN_API_PARSER.readLocation(filePath, null, PARSE_OPTIONS);
 
@@ -46,7 +47,7 @@ public class OpenApiParser {
 
         // manage data models by packages
         Map<String, List<String>> modelsByControllers = packagesManager.getModelsByControllers(result.getOpenAPI().getPaths());
-        packagesManager.splitModelFilesByDirectories(modelsByControllers, getModelsPackagePath());
+        packagesManager.splitModelFilesByDirectories(modelsByControllers, getModelsPackagePath(), project);
     }
 
     private String getRootFilePath() {
