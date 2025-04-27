@@ -4,19 +4,11 @@ plugins {
     id("org.jetbrains.intellij") version "1.17.4"
 }
 
-group = "ru.itmo.ivt"
+group = "ru.itmo.ivt.apitestgenplugin"
 version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
-}
-
-sourceSets {
-    main {
-        java {
-            srcDirs("src/main/java")
-        }
-    }
 }
 
 // Configure Gradle IntelliJ Plugin

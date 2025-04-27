@@ -2,26 +2,24 @@ package ru.itmo.ivt.apitestgenplugin;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.util.ui.JBUI;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 @Getter
 public class InputDialog extends DialogWrapper {
-    private JTextField textField1;
-    private JTextField textField2;
-    private JTextField textField3;
-    private JTextField textField4;
-    private JButton выбратьButton;
-    private JButton выбратьButton1;
-    private JButton выбратьButton2;
-    private JRadioButton нетRadioButton;
-    private JRadioButton JWTRadioButton;
-    private JRadioButton basicRadioButton;
-    private JButton ОКButton;
-    private JButton отменаButton;
+    private final JTextField openApiSpecTextField = new JTextField();
+    private final JTextField testConfigField = new JTextField();
+    private final JTextField dataConfigField = new JTextField();
+    private final JTextField baseUrlField = new JTextField();
+    private final JButton openApiSpecButton = new JButton("Выбрать");
+    private final JButton testConfigButton = new JButton("Выбрать");
+    private final JButton dataConfigButton = new JButton("Выбрать");
+    private final JRadioButton noAuthRadioButton = new JRadioButton("Нет");
+    private final JRadioButton tokenAuthRadioButton = new JRadioButton("JWT");
+    private final JRadioButton basicAuthRadioButton = new JRadioButton("Basic");
 
     protected InputDialog(Project project) {
         super(project);
@@ -31,101 +29,49 @@ public class InputDialog extends DialogWrapper {
 
     @Override
     protected @Nullable JComponent createCenterPanel() {
-        JPanel mainPanel = new JPanel(new GridLayout(9, 7, -1, -1));
+        JPanel mainPanel = new JPanel(new GridLayout(6, 4, -1, -1));
         mainPanel.setPreferredSize(new Dimension(400, 284));
-        mainPanel.setBorder(new EmptyBorder(0, 0, 0, 0));
-
-        mainPanel.add(Box.createHorizontalGlue());
+        mainPanel.setBorder(JBUI.Borders.empty());
 
         mainPanel.add(new JLabel("OpenAPI спецификация"));
-        textField1 = new JTextField();
-        textField1.setPreferredSize(new Dimension(160, -1));
-        mainPanel.add(textField1);
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
-        выбратьButton = new JButton("Выбрать");
-        mainPanel.add(выбратьButton);
-        mainPanel.add(Box.createHorizontalGlue()); // Horizontal spacer at row 1, column 6
+        openApiSpecTextField.setPreferredSize(new Dimension(50, -1));
+        mainPanel.add(openApiSpecTextField);
+        mainPanel.add(openApiSpecButton);
+        mainPanel.add(new Label());
 
-        // Row 2: Test configuration
-        mainPanel.add(new JLabel("Конфигурация тестовых проверок"));
-        textField2 = new JTextField();
-        textField2.setPreferredSize(new Dimension(160, -1));
-        mainPanel.add(textField2);
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
-        выбратьButton1 = new JButton("Выбрать");
-        mainPanel.add(выбратьButton1);
-        mainPanel.add(new JLabel()); // Empty cell
+        mainPanel.add(new JLabel("Конфигурация тестов"));
+        testConfigField.setPreferredSize(new Dimension(50, -1));
+        mainPanel.add(testConfigField);
+        mainPanel.add(testConfigButton);
+        mainPanel.add(new Label());
 
-        // Row 3: Data model configuration
         mainPanel.add(new JLabel("Конфигурация модели данных"));
-        textField3 = new JTextField();
-        textField3.setPreferredSize(new Dimension(160, -1));
-        mainPanel.add(textField3);
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
-        выбратьButton2 = new JButton("Выбрать");
-        mainPanel.add(выбратьButton2);
-        mainPanel.add(new JLabel()); // Empty cell
+        dataConfigField.setPreferredSize(new Dimension(50, -1));
+        mainPanel.add(dataConfigField);
+        mainPanel.add(dataConfigButton);
+        mainPanel.add(new Label());
 
-        // Row 4: Base URL
         mainPanel.add(new JLabel("Базовый URL"));
-        textField4 = new JTextField();
-        textField4.setPreferredSize(new Dimension(160, -1));
-        mainPanel.add(textField4);
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
+        baseUrlField.setPreferredSize(new Dimension(50, -1));
+        mainPanel.add(baseUrlField);
+        mainPanel.add(new Label());
+        mainPanel.add(new Label());
 
-        // Row 5: Authentication
         mainPanel.add(new JLabel("Аутентификация"));
-        нетRadioButton = new JRadioButton("Нет");
-        JWTRadioButton = new JRadioButton("JWT");
-        basicRadioButton = new JRadioButton("Basic");
-
-        // Group the radio buttons
         ButtonGroup authGroup = new ButtonGroup();
-        authGroup.add(нетRadioButton);
-        authGroup.add(JWTRadioButton);
-        authGroup.add(basicRadioButton);
-        нетRadioButton.setSelected(true);
+        authGroup.add(noAuthRadioButton);
+        authGroup.add(tokenAuthRadioButton);
+        authGroup.add(basicAuthRadioButton);
+        noAuthRadioButton.setSelected(true);
 
-        mainPanel.add(нетRadioButton);
-        mainPanel.add(JWTRadioButton);
-        mainPanel.add(basicRadioButton);
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
+        mainPanel.add(noAuthRadioButton);
+        mainPanel.add(tokenAuthRadioButton);
+        mainPanel.add(basicAuthRadioButton);
 
-        // Row 6: Empty row with vertical spacer
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(Box.createVerticalGlue()); // Vertical spacer
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
-
-        // Row 7: Buttons
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
-        отменаButton = new JButton("Отмена");
-        mainPanel.add(отменаButton);
-        ОКButton = new JButton("ОК");
-        mainPanel.add(ОКButton);
-        mainPanel.add(new JLabel()); // Empty cell
-
-        // Row 8: Empty row with vertical spacer
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(Box.createVerticalGlue()); // Vertical spacer
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
-        mainPanel.add(new JLabel()); // Empty cell
+        mainPanel.add(new Label());
+        mainPanel.add(new Label());
+        mainPanel.add(new Label());
+        mainPanel.add(new Label());
 
         return mainPanel;
     }
