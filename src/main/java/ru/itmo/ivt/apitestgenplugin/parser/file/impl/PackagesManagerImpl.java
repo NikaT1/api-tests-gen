@@ -2,8 +2,6 @@ package ru.itmo.ivt.apitestgenplugin.parser.file.impl;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VfsUtil;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.newvfs.impl.VirtualFileImpl;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.media.ArraySchema;
@@ -22,7 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static ru.itmo.ivt.apitestgenplugin.parser.file.ImportFixer.fixImports;
+import static ru.itmo.ivt.apitestgenplugin.util.FileUtils.fixImports;
 
 public class PackagesManagerImpl implements PackagesManager {
     @Override
@@ -31,6 +29,9 @@ public class PackagesManagerImpl implements PackagesManager {
         if (!baseDir.exists() || !baseDir.isDirectory()) {
             throw new IllegalArgumentException("Base directory does not exist or is not a directory: " + directory);
         }
+
+        String basePackage = getBasePackage(baseDir);
+        List<File> createdFiles = new ArrayList<>();
 
         for (Map.Entry<String, List<String>> entry : modelsByControllers.entrySet()) {
             String controllerName = entry.getKey().replace("-", "_");
@@ -55,8 +56,9 @@ public class PackagesManagerImpl implements PackagesManager {
                                 destFile.toPath(),
                                 StandardCopyOption.REPLACE_EXISTING
                         );
+                        updatePackageInFile(destFile, basePackage, controllerName);
+                        createdFiles.add(destFile);
                         System.out.println("Moved " + sourceFile.getName() + " to " + controllerDir.getName());
-                        fixImports(project, VfsUtil.findFileByIoFile(destFile, true));
                     } catch (IOException e) {
                         System.err.println("Failed to move file " + sourceFile.getName() + ": " + e.getMessage());
                     }
@@ -65,6 +67,40 @@ public class PackagesManagerImpl implements PackagesManager {
                 }
             }
         }
+        if (createdFiles.isEmpty()) {
+            System.out.println("No files were created or moved.");
+        } else {
+            for (File file : createdFiles) {
+                fixImports(project, VfsUtil.findFileByIoFile(file, true));
+            }
+            System.out.println("Total files created/moved: " + createdFiles.size());
+        }
+    }
+
+    private String getBasePackage(File baseDir) {
+        File[] files = baseDir.listFiles((dir, name) -> name.endsWith(".java"));
+        if (files != null && files.length > 0) {
+            try {
+                String content = Files.readString(files[0].toPath());
+                int packageStart = content.indexOf("package ");
+                if (packageStart >= 0) {
+                    int packageEnd = content.indexOf(";", packageStart);
+                    if (packageEnd > packageStart) {
+                        return content.substring(packageStart + 8, packageEnd).trim();
+                    }
+                }
+            } catch (IOException e) {
+                System.err.println("Failed to read file to determine base package: " + e.getMessage());
+            }
+        }
+        return "";
+    }
+
+    private void updatePackageInFile(File file, String basePackage, String controllerName) throws IOException {
+        String content = Files.readString(file.toPath());
+        String newPackage = basePackage.isEmpty() ? controllerName : basePackage + "." + controllerName;
+        content = content.replaceFirst("package\\s+.*?;", "package " + newPackage + ";");
+        Files.writeString(file.toPath(), content);
     }
 
     @Override
@@ -126,12 +162,14 @@ public class PackagesManagerImpl implements PackagesManager {
     private List<String> extractSchemaFromSchema(Schema schema) {
         List<String> schemas = new ArrayList<>();
 
-        // Обрабатываем прямые ссылки
-        if (schema.get$ref() != null && schema.get$ref().startsWith("#/components/schemas/")) {
+        if (schema.get$ref() != null && (schema.get$ref().startsWith("#/components/schemas/"))) {
             schemas.add(schema.get$ref().substring("#/components/schemas/".length()));
         }
 
-        // Обрабатываем массивы
+        if (schema.get$ref() != null && (schema.get$ref().startsWith("#/$defs/"))) {
+            schemas.add(schema.get$ref().substring("#/$defs/".length()));
+        }
+
         if (schema instanceof ArraySchema) {
             Schema items = ((ArraySchema) schema).getItems();
             if (items != null) {

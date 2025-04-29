@@ -1,0 +1,14 @@
+#parse("Test Class Header.java")
+#foreach( $test in $TESTS.split("\n") )
+
+    @Test
+    public void ${test}Test() {
+        <preconditions_test>
+
+        Response response = <client_test>;
+        Assertions.assertEquals(<answer_test>, response.statusCode());
+
+        <postcondition_test>
+    }
+#end
+}

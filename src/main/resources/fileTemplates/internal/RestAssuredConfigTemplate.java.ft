@@ -1,0 +1,19 @@
+#if (${PACKAGE_NAME} && ${PACKAGE_NAME} != "")
+    package ${PACKAGE_NAME}
+#end
+
+import io.restassured.RestAssured;
+import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.specification.RequestSpecification;
+import io.restassured.http.ContentType;
+
+public class RestAssuredConfiguration {
+    private final String baseUrl = PropertiesHelper.getInstance().getProperty("base_url");
+
+    public static RequestSpecification getRequestSpecification() {
+        return new RequestSpecBuilder()
+                .setBaseUri(baseUrl)
+                .setContentType(ContentType.JSON)
+                .build();
+    }
+}

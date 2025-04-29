@@ -1,0 +1,8 @@
+base_url=${BASE_URL|'<service_base_url>'}
+#if (${BASIC_AUTH_USERNAME})
+    username=${BASIC_AUTH_USERNAME|'<your_username>'}
+    password=${BASIC_AUTH_PASSWORD|'<your_password>'}
+#end
+#if (${TOKEN_AUTH})
+    token=${TOKEN_AUTH|'<auth_token>'}
+#end
