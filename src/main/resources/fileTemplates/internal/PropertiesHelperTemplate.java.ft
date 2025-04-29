@@ -1,5 +1,5 @@
 #if (${PACKAGE_NAME} && ${PACKAGE_NAME} != "")
-    package ${PACKAGE_NAME}
+package ${PACKAGE_NAME}
 #end
 
 import java.io.FileInputStream;

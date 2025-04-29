@@ -1,5 +1,5 @@
 #if (${PACKAGE_NAME} && ${PACKAGE_NAME} != "")
-    package ${PACKAGE_NAME}
+package ${PACKAGE_NAME}
 #end
 
 import io.restassured.RestAssured;
@@ -7,13 +7,45 @@ import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.http.ContentType;
 
+#if (${BASIC_AUTH_USERNAME})
+import static io.restassured.RestAssured.preemptive;
+#end
+
 public class RestAssuredConfiguration {
     private final String baseUrl = PropertiesHelper.getInstance().getProperty("base_url");
 
+#if (${NO_AUTH})
     public static RequestSpecification getRequestSpecification() {
         return new RequestSpecBuilder()
                 .setBaseUri(baseUrl)
                 .setContentType(ContentType.JSON)
                 .build();
     }
+#end
+#if (${NO_AUTH})
+    public static RequestSpecification getRequestSpecification() {
+        return new RequestSpecBuilder()
+                .setBaseUri(baseUrl)
+                .setContentType(ContentType.JSON)
+                .build();
+    }
+#end
+#if (${BASIC_AUTH_USERNAME})
+    public static RequestSpecification getRequestSpecification() {
+        return new RequestSpecBuilder()
+                .setBaseUri(baseUrl)
+                .setContentType(ContentType.JSON)
+                .setAuth(preemptive().basic(username, password))
+                .build();
+    }
+#end
+#if (${TOKEN_AUTH})
+    public static RequestSpecification getRequestSpecification() {
+        return new RequestSpecBuilder()
+                .setBaseUri(baseUrl)
+                .setContentType(ContentType.JSON)
+                .addHeader("Authorization", "Bearer " + ${TOKEN_AUTH});
+                .build();
+    }
+#end
 }

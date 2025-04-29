@@ -1,4 +1,19 @@
-#parse("Test Class Header.java")
+#if (${PACKAGE_NAME} && ${PACKAGE_NAME} != "")
+package ${PACKAGE_NAME}
+#end
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+#if (${OPERATION_NAME} != "")
+public class ${OPERATION_NAME}Test {
+#else
+public class UnknownTest {
+#end
+#foreach( $client in $CLIENTS.split("\n") )
+    #set( $name = $client[0].toLowerCase() + $client.substring(1) )
+    private final $client $name = new $client();
+#end
 #foreach( $test in $TESTS.split("\n") )
 
     @Test
