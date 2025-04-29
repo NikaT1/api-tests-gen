@@ -24,7 +24,7 @@ import static ru.itmo.ivt.apitestgenplugin.util.FileUtils.fixImports;
 
 public class PackagesManagerImpl implements PackagesManager {
     @Override
-    public void splitModelFilesByDirectories(Map<String, List<String>> modelsByControllers, String directory, Project project) {
+    public List<File> splitModelFilesByDirectories(Map<String, List<String>> modelsByControllers, String directory, Project project) {
         File baseDir = new File(directory);
         if (!baseDir.exists() || !baseDir.isDirectory()) {
             throw new IllegalArgumentException("Base directory does not exist or is not a directory: " + directory);
@@ -75,6 +75,7 @@ public class PackagesManagerImpl implements PackagesManager {
             }
             System.out.println("Total files created/moved: " + createdFiles.size());
         }
+        return createdFiles;
     }
 
     private String getBasePackage(File baseDir) {

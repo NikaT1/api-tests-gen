@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface PackagesManager {
-    void splitModelFilesByDirectories(Map<String, List<String>> modelsByControllers, String directory, Project project);
+    List<File> splitModelFilesByDirectories(Map<String, List<String>> modelsByControllers, String directory, Project project);
     void clearModelFile(File file);
     Map<String, List<String>> getModelsByControllers(Paths paths);
 }

@@ -1,40 +1,51 @@
 package ru.itmo.ivt.apitestgenplugin.codeGen;
 
-import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.psi.PsiDirectory;
-import com.intellij.psi.PsiManager;
+import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
-import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.models.PathItem;
 import ru.itmo.ivt.apitestgenplugin.GenerationContext;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static ru.itmo.ivt.apitestgenplugin.util.FileUtils.createControllerDirectory;
+import static ru.itmo.ivt.apitestgenplugin.codeGen.TestFileGenerator.createClientClassFile;
+import static ru.itmo.ivt.apitestgenplugin.util.FileUtils.createSubDirectory;
 import static ru.itmo.ivt.apitestgenplugin.util.FileUtils.getPackageName;
 import static ru.itmo.ivt.apitestgenplugin.util.OpenApiUtils.*;
 
-@RequiredArgsConstructor
 public class TestGenerationManager {
-    private final GenerationContext context;
-
-    public void generateClientsAndTests() {
-        PsiDirectory testDir = prepareDirForTests();
-        generateClientClasses();
-        generateTestClasses(testDir);
+    public void generateClientsAndTests(PsiDirectory srcDir, GenerationContext context) {
+        PsiDirectory mainDir = createSubDirectory(context.getProject(), srcDir, "main");
+        generateClientClasses(mainDir, context);
+        generateTestClasses(srcDir, context);
     }
 
-    private void generateClientClasses() {
-        return;
-    }
-
-    private void generateTestClasses(PsiDirectory baseTestDir) {
+    private void generateClientClasses(PsiDirectory mainDirectory, GenerationContext context) {
         assert context.getClientFiles() != null;
         assert context.getModelFiles() != null;
         assert context.getOpenAPI() != null;
 
         if (context.getOpenAPI().getPaths() == null) return;
+
+        Map<String, List<PathItem>> controllers = groupPathsByTags(context.getOpenAPI());
+        PsiDirectory clientsDir = createSubDirectory(context.getProject(), mainDirectory, "clients");
+
+        for (Map.Entry<String, List<PathItem>> entry : controllers.entrySet()) {
+            createClientClassFile(context.getProject(),
+                    clientsDir,
+                    entry.getKey(),
+                    entry.getValue());
+        }
+    }
+
+    private void generateTestClasses(PsiDirectory srcDir, GenerationContext context) {
+        assert context.getClientFiles() != null;
+        assert context.getModelFiles() != null;
+        assert context.getOpenAPI() != null;
+
+        if (context.getOpenAPI().getPaths() == null) return;
+
+        PsiDirectory testDir = createSubDirectory(context.getProject(), srcDir, "test");
 
         context.getOpenAPI().getPaths().forEach((path, pathItem) -> {
             Map<String, Operation> operations = getOperations(pathItem);
@@ -43,7 +54,7 @@ public class TestGenerationManager {
                 String controllerName = getControllerName(operation);
                 String operationName = getOperationName(operation, httpMethod);
 
-                PsiDirectory controllerDir = createControllerDirectory(context.getProject(), baseTestDir, controllerName);
+                PsiDirectory controllerDir = createSubDirectory(context.getProject(), testDir, controllerName);
                 if (controllerDir == null) return;
 
                 List<String> tests = generateTestNames(operation);
@@ -51,7 +62,7 @@ public class TestGenerationManager {
                 TestFileGenerator.createTestClassFile(
                         context.getProject(),
                         controllerDir,
-                        getPackageName(baseTestDir, controllerName),
+                        getPackageName(testDir, controllerName),
                         operationName,
                         tests
                 );
@@ -81,12 +92,27 @@ public class TestGenerationManager {
         return testNames;
     }
 
-    private PsiDirectory prepareDirForTests() {
-        return PsiManager.getInstance(context.getProject())
-                .findDirectory(
-                        ProjectRootManager.getInstance(context.getProject())
-                                .getContentSourceRoots()[0]
-                )
-                .createSubdirectory("test");
+    private static Map<String, List<PathItem>> groupPathsByTags(OpenAPI openAPI) {
+        Map<String, List<PathItem>> result = new HashMap<>();
+
+        openAPI.getPaths().forEach((path, pathItem) -> {
+            List<Operation> operations = new ArrayList<>();
+            if (pathItem.getGet() != null) operations.add(pathItem.getGet());
+            if (pathItem.getPost() != null) operations.add(pathItem.getPost());
+            if (pathItem.getPut() != null) operations.add(pathItem.getPut());
+            if (pathItem.getDelete() != null) operations.add(pathItem.getDelete());
+            if (pathItem.getPatch() != null) operations.add(pathItem.getPatch());
+
+            operations.forEach(op -> {
+                if (op.getTags() != null && !op.getTags().isEmpty()) {
+                    String tag = op.getTags().get(0);
+                    result.computeIfAbsent(tag, k -> new ArrayList<>()).add(pathItem);
+                } else {
+                    result.computeIfAbsent("Default", k -> new ArrayList<>()).add(pathItem);
+                }
+            });
+        });
+
+        return result;
     }
 }

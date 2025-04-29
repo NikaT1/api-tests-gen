@@ -7,6 +7,7 @@ import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.SystemProperties;
+import ru.itmo.ivt.apitestgenplugin.GenerationContext;
 import ru.itmo.ivt.apitestgenplugin.parser.converters.MetadataToPojoConverter;
 import ru.itmo.ivt.apitestgenplugin.parser.file.PackagesManager;
 import ru.itmo.ivt.apitestgenplugin.parser.schema.JsonSchemaCreator;
@@ -36,7 +37,7 @@ public class OpenApiParser {
 
     @SneakyThrows
     // TODO добавить опцию по переносу всего в schemas
-    public void fillContext(Project project) {
+    public GenerationContext fillContext(Project project) {
         File outputDirectoryFile = new File(outputDirectory);
         SwaggerParseResult result = OPEN_API_PARSER.readLocation(filePath, null, PARSE_OPTIONS);
 
@@ -47,7 +48,12 @@ public class OpenApiParser {
 
         // manage data models by packages
         Map<String, List<String>> modelsByControllers = packagesManager.getModelsByControllers(result.getOpenAPI().getPaths());
-        packagesManager.splitModelFilesByDirectories(modelsByControllers, getModelsPackagePath(), project);
+        List<File> models = packagesManager.splitModelFilesByDirectories(modelsByControllers, getModelsPackagePath(), project);
+
+        GenerationContext context = new GenerationContext();
+        context.setOpenAPI(result.getOpenAPI());
+        context.setModelFiles(models);
+        return context;
     }
 
     private String getRootFilePath() {
