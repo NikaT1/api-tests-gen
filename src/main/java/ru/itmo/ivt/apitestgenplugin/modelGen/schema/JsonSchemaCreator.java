@@ -1,4 +1,4 @@
-package ru.itmo.ivt.apitestgenplugin.parser.schema;
+package ru.itmo.ivt.apitestgenplugin.modelGen.schema;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.models.OpenAPI;

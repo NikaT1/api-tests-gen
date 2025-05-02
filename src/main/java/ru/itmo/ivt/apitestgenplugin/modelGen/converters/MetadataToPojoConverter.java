@@ -1,4 +1,4 @@
-package ru.itmo.ivt.apitestgenplugin.parser.converters;
+package ru.itmo.ivt.apitestgenplugin.modelGen.converters;
 
 import java.io.File;
 import java.io.IOException;

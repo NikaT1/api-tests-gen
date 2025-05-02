@@ -1,4 +1,4 @@
-package ru.itmo.ivt.apitestgenplugin.parser.config;
+package ru.itmo.ivt.apitestgenplugin.modelGen.config;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;

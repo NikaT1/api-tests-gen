@@ -5,6 +5,9 @@ import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
+import ru.itmo.ivt.apitestgenplugin.model.enums.AuthType;
+import ru.itmo.ivt.apitestgenplugin.model.UserInput;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -74,5 +77,15 @@ public class InputDialog extends DialogWrapper {
         mainPanel.add(new Label());
 
         return mainPanel;
+    }
+
+    protected UserInput getUserInput() {
+        return UserInput.builder()
+                .openApiPath(openApiSpecTextField.getText())
+                .dataConfigPath(dataConfigField.getText())
+                .testConfigPath(testConfigField.getText())
+                .authType(noAuthRadioButton.isSelected() ? AuthType.NO : basicAuthRadioButton.isSelected() ? AuthType.BASIC : AuthType.TOKEN)
+                .baseUrl(baseUrlField.getText())
+                .build();
     }
 }

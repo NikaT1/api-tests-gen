@@ -1,37 +1,36 @@
 #if (${PACKAGE_NAME} && ${PACKAGE_NAME} != "")
-package ${PACKAGE_NAME}
+package ${PACKAGE_NAME};
 #end
 
-import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.http.ContentType;
+import manager.TestPropertiesManager;
 
-#if (${BASIC_AUTH_USERNAME})
+#if (${BASIC_AUTH})
 import static io.restassured.RestAssured.preemptive;
 #end
 
 public class RestAssuredConfiguration {
-    private final String baseUrl = PropertiesHelper.getInstance().getProperty("base_url");
+    private final String baseUrl = TestPropertiesManager.getInstance().getProperty("base_url");
+#if (${BASIC_AUTH})
+    private final String username = TestPropertiesManager.getInstance().getProperty("username");
+    private final String password = TestPropertiesManager.getInstance().getProperty("password");
+#end
+#if (${TOKEN_AUTH})
+    private final String token = TestPropertiesManager.getInstance().getProperty("token");
+#end
 
 #if (${NO_AUTH})
-    public static RequestSpecification getRequestSpecification() {
+    public RequestSpecification getRequestSpecification() {
         return new RequestSpecBuilder()
                 .setBaseUri(baseUrl)
                 .setContentType(ContentType.JSON)
                 .build();
     }
 #end
-#if (${NO_AUTH})
-    public static RequestSpecification getRequestSpecification() {
-        return new RequestSpecBuilder()
-                .setBaseUri(baseUrl)
-                .setContentType(ContentType.JSON)
-                .build();
-    }
-#end
-#if (${BASIC_AUTH_USERNAME})
-    public static RequestSpecification getRequestSpecification() {
+#if (${BASIC_AUTH})
+    public RequestSpecification getRequestSpecification() {
         return new RequestSpecBuilder()
                 .setBaseUri(baseUrl)
                 .setContentType(ContentType.JSON)
@@ -40,11 +39,11 @@ public class RestAssuredConfiguration {
     }
 #end
 #if (${TOKEN_AUTH})
-    public static RequestSpecification getRequestSpecification() {
+    public RequestSpecification getRequestSpecification() {
         return new RequestSpecBuilder()
                 .setBaseUri(baseUrl)
                 .setContentType(ContentType.JSON)
-                .addHeader("Authorization", "Bearer " + ${TOKEN_AUTH});
+                .addHeader("Authorization", "Bearer " + token);
                 .build();
     }
 #end

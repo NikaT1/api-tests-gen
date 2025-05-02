@@ -2,28 +2,39 @@ package ru.itmo.ivt.apitestgenplugin.util;
 
 import com.intellij.codeInsight.actions.OptimizeImportsProcessor;
 import com.intellij.codeInsight.actions.ReformatCodeProcessor;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.JavaDirectoryService;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import jakarta.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 
 import java.io.File;
 
 @UtilityClass
 public class FileUtils {
-    public static void fixImports(Project project, VirtualFile file) {
+    public static PsiDirectory getSrcDirectory(@NotNull Project project) {
+        return ReadAction.compute(() -> {
+            VirtualFile projectDir = ProjectUtil.guessProjectDir(project);
+            if (projectDir == null) return null;
+            VirtualFile srcDir = projectDir.findChild("src");
+            if (srcDir != null && srcDir.isDirectory()) {
+                return PsiManager.getInstance(project).findDirectory(srcDir);
+            }
+            return null;
+        });
+    }
+
+    public static void fixImports(Project project, PsiFile file) {
         WriteCommandAction.runWriteCommandAction(project, () -> {
-            PsiManager psiManager = PsiManager.getInstance(project);
-            PsiFile psiFile = psiManager.findFile(file);
-            assert psiFile != null;
-            new OptimizeImportsProcessor(project, psiFile).run();
-            new ReformatCodeProcessor(project, psiFile, null, false).run();
+            new OptimizeImportsProcessor(project, file).run();
+            new ReformatCodeProcessor(project, file, null, false).run();
         });
     }
 
@@ -40,18 +51,6 @@ public class FileUtils {
         } catch (Exception e) {
             return null;
         }
-    }
-
-    public static String getPackageName(PsiDirectory baseTestDir, String controllerName) {
-        String basePackage = JavaDirectoryService.getInstance()
-                .getPackage(baseTestDir)
-                .getQualifiedName();
-        return basePackage + "." + controllerName.toLowerCase();
-    }
-
-    public static String capitalize(String str) {
-        if (str == null || str.isEmpty()) return str;
-        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
     public static PsiDirectory createPsiDirectoryFromPath(Project project, String targetDir) {

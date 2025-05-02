@@ -1,5 +1,5 @@
 #if (${PACKAGE_NAME} && ${PACKAGE_NAME} != "")
-package ${PACKAGE_NAME}
+package ${PACKAGE_NAME};
 #end
 
 import org.junit.jupiter.api.Test;
@@ -18,12 +18,12 @@ public class UnknownTest {
 
     @Test
     public void ${test}Test() {
-        <preconditions_test>
+        <${test}_preconditions_test>
 
-        Response response = <client_test>;
-        Assertions.assertEquals(<answer_test>, response.statusCode());
+        Response response = <${test}_client_test>;
+        Assertions.assertEquals(<${test}_answer_test>, response.statusCode());
 
-        <postcondition_test>
+        <${test}_postcondition_test>
     }
 #end
 }

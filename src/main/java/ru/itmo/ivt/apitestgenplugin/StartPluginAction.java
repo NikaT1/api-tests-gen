@@ -7,13 +7,19 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiDirectory;
 import org.jetbrains.annotations.NotNull;
 import ru.itmo.ivt.apitestgenplugin.codeGen.TestGenerationManager;
-import ru.itmo.ivt.apitestgenplugin.parser.ParserManager;
+import ru.itmo.ivt.apitestgenplugin.configGen.ConfigGenerationManager;
+import ru.itmo.ivt.apitestgenplugin.dataGen.DataGenerationManager;
+import ru.itmo.ivt.apitestgenplugin.model.GenerationContext;
+import ru.itmo.ivt.apitestgenplugin.model.UserInput;
+import ru.itmo.ivt.apitestgenplugin.modelGen.ParserManager;
 
-import static ru.itmo.ivt.apitestgenplugin.util.FileUtils.createPsiDirectoryFromPath;
+import static ru.itmo.ivt.apitestgenplugin.util.FileUtils.getSrcDirectory;
 
 public class StartPluginAction extends AnAction {
     private final ParserManager parserManager = new ParserManager();
     private final TestGenerationManager testGenerationManager = new TestGenerationManager();
+    private final DataGenerationManager dataGenerationManager = new DataGenerationManager();
+    private final ConfigGenerationManager configGenerationManager = new ConfigGenerationManager();
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
@@ -23,12 +29,20 @@ public class StartPluginAction extends AnAction {
         dialog.show();
         ApplicationManager.getApplication().runWriteAction(() -> {
             if (dialog.isOK()) {
-                String specFilePath = dialog.getOpenApiSpecTextField().getText();
+                UserInput userInput = dialog.getUserInput();
+                GenerationContext context = new GenerationContext();
+                context.setProject(project);
+                context.setUserInput(userInput);
+
                 //String targetDir = e.getData(PlatformDataKeys.VIRTUAL_FILE).getParent().getCanonicalPath();
-                String targetDir = "C:/Users/пользователь/IdeaProjects/api-tests-plugin/src"; // only for testing
-                PsiDirectory srcDir = createPsiDirectoryFromPath(project, targetDir);
-                GenerationContext context = parserManager.prepareGeneratorContext(specFilePath, targetDir, project);
+                String targetDir = "C:/Users/пользователь/IdeaProjects/demo1/src"; // only for testing
+                //PsiDirectory srcDir = createPsiDirectoryFromPath(project, targetDir);
+                PsiDirectory srcDir = getSrcDirectory(project);
+
+                parserManager.prepareGeneratorContext(userInput.openApiPath(), srcDir.getVirtualFile().getCanonicalPath(), context);
+                configGenerationManager.fillConfigFiles(srcDir, context);
                 testGenerationManager.generateClientsAndTests(srcDir, context);
+                dataGenerationManager.fillClientsAndTests(srcDir, context);
             }
         });
     }

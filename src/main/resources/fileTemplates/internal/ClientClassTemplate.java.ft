@@ -1,26 +1,36 @@
 #if (${PACKAGE_NAME} && ${PACKAGE_NAME} != "")
-package ${PACKAGE_NAME}
+package ${PACKAGE_NAME};
 #end
 
+import config.RestAssuredConfiguration;
+import io.restassured.response.Response;
+
+import static io.restassured.RestAssured.*;
+
 #if (${CONTROLLER_NAME} != "")
-public class ${CONTROLLER_NAME}Client {
+public class ${CONTROLLER_NAME} {
 #else
 public class UnknownClient {
 #end
 #foreach( $end_point in $END_POINTS.split("\n") )
-    #set( $name = $end_point.replaceAll("/", "_").replaceAll(" ", "_").toUpperCase() )
-    private static final String $name_PATH = "$end_point.split(" ")[1]";
+    #set( $name = $end_point.split(" ")[0].toUpperCase() )
+    private static final String ${name}_PATH = "${end_point.split(" ")[1]}";
 #end
-#foreach( $operation in $OPERATIONS.split("\n") )
-    #set( $params = $operation.split("=") )
-    #set( $name = $params[0].replaceAll("/", "_").replaceAll(" ", "_").toUpperCase() )
 
-    public Response $params[1](<method_params>) {
+    private final RestAssuredConfiguration configuration = new RestAssuredConfiguration();
+#foreach( $operation in $OPERATIONS.split("\n") )
+    #set( $params = $operation.split(" ") )
+    #set( $path_name = $params[0].toUpperCase() )
+    #set( $method_name = $params[1] )
+    #set( $http_method_name = $params[2].toLowerCase() )
+
+    public Response ${method_name}(<${method_name}_method_params>) {
             return given()
-                    .spec(getRequestSpecification())
+                    .spec(configuration.getRequestSpecification())
+                    <${method_name}_method_query_params>
+                    <${method_name}_method_body>
                     .when()
-                    <method_body>
-                    .$params[0].split(" ")[0].toLowerCase()($name_PATH<method_path_params>);
+                    .${http_method_name}(${path_name}_PATH<${method_name}_method_path_params>);
         }
 #end
 }

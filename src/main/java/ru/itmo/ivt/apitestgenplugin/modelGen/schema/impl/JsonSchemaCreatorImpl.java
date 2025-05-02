@@ -1,14 +1,14 @@
-package ru.itmo.ivt.apitestgenplugin.parser.schema.impl;
+package ru.itmo.ivt.apitestgenplugin.modelGen.schema.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
-import ru.itmo.ivt.apitestgenplugin.parser.schema.JsonSchemaCreator;
+import ru.itmo.ivt.apitestgenplugin.modelGen.schema.JsonSchemaCreator;
 
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static ru.itmo.ivt.apitestgenplugin.parser.config.ParserObjectMapperConfig.getObjectMapper;
+import static ru.itmo.ivt.apitestgenplugin.modelGen.config.ParserObjectMapperConfig.getObjectMapper;
 
 public class JsonSchemaCreatorImpl implements JsonSchemaCreator {
     @Override

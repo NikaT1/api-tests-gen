@@ -1,9 +1,9 @@
-package ru.itmo.ivt.apitestgenplugin.parser.converters.impl;
+package ru.itmo.ivt.apitestgenplugin.modelGen.converters.impl;
 
 import com.sun.codemodel.JCodeModel;
 import org.jsonschema2pojo.*;
 import org.jsonschema2pojo.rules.RuleFactory;
-import ru.itmo.ivt.apitestgenplugin.parser.converters.MetadataToPojoConverter;
+import ru.itmo.ivt.apitestgenplugin.modelGen.converters.MetadataToPojoConverter;
 
 import java.io.File;
 import java.io.IOException;

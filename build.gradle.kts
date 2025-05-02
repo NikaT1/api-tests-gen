@@ -17,7 +17,7 @@ intellij {
     version.set("2024.1.7")
     type.set("IC") // Target IDE Platform
 
-    plugins.set(listOf("java"))
+    plugins.set(listOf("java", "maven"))
 }
 
 tasks {
@@ -37,8 +37,12 @@ tasks {
 }
 
 dependencies {
-    implementation("io.swagger.parser.v3:swagger-parser:2.1.13")
+    implementation("io.swagger.parser.v3:swagger-parser:2.1.13") {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+    }
     compileOnly("org.projectlombok:lombok:1.18.30")
     annotationProcessor("org.projectlombok:lombok:1.18.30")
-    implementation("org.jsonschema2pojo:jsonschema2pojo-core:1.2.2")
+    implementation("org.jsonschema2pojo:jsonschema2pojo-core:1.2.2") {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+    }
 }

@@ -1,14 +1,18 @@
 package ru.itmo.ivt.apitestgenplugin.util;
 
+import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import lombok.experimental.UtilityClass;
+import ru.itmo.ivt.apitestgenplugin.model.PathItemWithEndPoint;
 
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import static ru.itmo.ivt.apitestgenplugin.util.FileUtils.capitalize;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @UtilityClass
 public class OpenApiUtils {
@@ -22,66 +26,92 @@ public class OpenApiUtils {
         return operations;
     }
 
-    public static String getControllerName(Operation operation) {
-        if (operation.getTags() != null && !operation.getTags().isEmpty()) {
-            return operation.getTags().get(0).replaceAll("[^a-zA-Z0-9]", "");
-        }
-        return "DefaultController";
+    public static Map<String, List<PathItemWithEndPoint>> groupPathsByTags(OpenAPI openAPI) {
+        Map<String, List<PathItemWithEndPoint>> result = new HashMap<>();
+
+        openAPI.getPaths().forEach((path, pathItem) -> {
+            PathItemWithEndPoint pathItemWithEndPoint = new PathItemWithEndPoint(pathItem, path);
+            Map<String, Operation> operations = getOperations(pathItem);
+            operations.values().forEach(op -> {
+                if (op.getTags() != null && !op.getTags().isEmpty()) {
+                    String tag = op.getTags().get(0);
+                    result.computeIfAbsent(tag, k -> new ArrayList<>()).add(pathItemWithEndPoint);
+                } else {
+                    result.computeIfAbsent("Default", k -> new ArrayList<>()).add(pathItemWithEndPoint);
+                }
+            });
+        });
+        return result;
     }
 
-    public static String getOperationName(Operation operation, String httpMethod) {
-        if (operation.getOperationId() != null) {
-            return capitalize(operation.getOperationId().replaceAll("[^a-zA-Z0-9]", ""));
-        }
-        return capitalize(httpMethod) + "Operation";
+    public static Map<String, List<String>> getModelsByControllers(Paths paths) {
+        return paths.entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> entry.getValue().readOperations().stream()
+                                .map(Operation::getTags)
+                                .filter(Objects::nonNull)
+                                .flatMap(List::stream)
+                                .findFirst()
+                                .orElse("common"),
+                        entry -> entry.getValue().readOperations().stream()
+                                .flatMap(op -> extractSchemasFromOperation(op).stream())
+                                .distinct()
+                                .toList(),
+                        (existing, replacement) -> {
+                            // Объединяем списки для дубликатов тегов
+                            List<String> merged = new ArrayList<>(existing);
+                            merged.addAll(replacement);
+                            return merged.stream().distinct().toList();
+                        }
+                ));
     }
 
-    public static String extractHttpMethod(String operation) {
-        return operation.split(" ")[0].toLowerCase();
-    }
+    public static List<String> extractSchemasFromOperation(Operation operation) {
+        List<String> schemas = new ArrayList<>();
 
-    public static String extractPath(String endPoint) {
-        return endPoint.split(" ")[1];
-    }
-
-    public static String extractMethodName(String operation) {
-        return operation.split("=")[1];
-    }
-
-    public static void processPathItem(PathItem pathItem, StringBuilder endPoints, StringBuilder operations) {
-        processOperation(pathItem.getGet(), "GET", endPoints, operations);
-        processOperation(pathItem.getPost(), "POST", endPoints, operations);
-        processOperation(pathItem.getPut(), "PUT", endPoints, operations);
-        processOperation(pathItem.getDelete(), "DELETE", endPoints, operations);
-        processOperation(pathItem.getPatch(), "PATCH", endPoints, operations);
-    }
-
-    public static void processOperation(Operation operation, String method,
-                                         StringBuilder endPoints, StringBuilder operations) {
-        if (operation != null) {
-            String path = operation.getOperationId();
-            String methodName = convertToMethodName(operation.getOperationId(), method);
-
-            endPoints.append(method).append(" ").append(path).append("\n");
-
-            operations.append(method)
-                    .append(" ")
-                    .append(path)
-                    .append("=")
-                    .append(methodName)
-                    .append("\n");
-        }
-    }
-
-    public static String convertToMethodName(String operationId, String httpMethod) {
-        if (operationId == null || operationId.isEmpty()) {
-            return httpMethod.toLowerCase() + "Request";
+        // Обрабатываем request body
+        if (operation.getRequestBody() != null
+                && operation.getRequestBody().getContent() != null) {
+            operation.getRequestBody().getContent().values().stream()
+                    .map(MediaType::getSchema)
+                    .filter(Objects::nonNull)
+                    .map(OpenApiUtils::extractSchemaFromSchema)
+                    .forEach(schemas::addAll);
         }
 
-        return Arrays.stream(operationId.split("[^a-zA-Z0-9]"))
-                .filter(word -> !word.isEmpty())
-                .map(word -> word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase())
-                .reduce("", String::concat)
-                .replaceFirst("^.", String.valueOf(Character.toLowerCase(operationId.charAt(0))));
+        // Обрабатываем responses
+        if (operation.getResponses() != null) {
+            operation.getResponses().values().stream()
+                    .map(ApiResponse::getContent)
+                    .filter(Objects::nonNull)
+                    .flatMap(content -> content.values().stream())
+                    .map(MediaType::getSchema)
+                    .filter(Objects::nonNull)
+                    .map(OpenApiUtils::extractSchemaFromSchema)
+                    .forEach(schemas::addAll);
+        }
+
+        return schemas.stream().distinct().toList();
+    }
+
+    public static List<String> extractSchemaFromSchema(Schema schema) {
+        List<String> schemas = new ArrayList<>();
+
+        if (schema.get$ref() != null && (schema.get$ref().startsWith("#/components/schemas/"))) {
+            schemas.add(schema.get$ref().substring("#/components/schemas/".length()));
+        }
+
+        if (schema.get$ref() != null && (schema.get$ref().startsWith("#/$defs/"))) {
+            schemas.add(schema.get$ref().substring("#/$defs/".length()));
+        }
+
+        if (schema instanceof ArraySchema) {
+            Schema items = ((ArraySchema) schema).getItems();
+            if (items != null) {
+                schemas.addAll(extractSchemaFromSchema(items));
+            }
+        }
+
+        return schemas;
     }
 }
