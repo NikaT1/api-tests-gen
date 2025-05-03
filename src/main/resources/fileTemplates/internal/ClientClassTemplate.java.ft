@@ -13,24 +13,35 @@ public class ${CONTROLLER_NAME} {
 public class UnknownClient {
 #end
 #foreach( $end_point in $END_POINTS.split("\n") )
-    #set( $name = $end_point.split(" ")[0].toUpperCase() )
-    private static final String ${name}_PATH = "${end_point.split(" ")[1]}";
+    #set( $name = $end_point.split("=")[0].toUpperCase() )
+    private static final String ${name}_PATH = "${end_point.split("=")[1]}";
 #end
 
     private final RestAssuredConfiguration configuration = new RestAssuredConfiguration();
 #foreach( $operation in $OPERATIONS.split("\n") )
-    #set( $params = $operation.split(" ") )
+    #set( $params = $operation.split("=") )
     #set( $path_name = $params[0].toUpperCase() )
     #set( $method_name = $params[1] )
     #set( $http_method_name = $params[2].toLowerCase() )
+    #set( $method_params = $params[3] )
+    #set( $path_params = $params[4] )
+    #set( $query_params = $params[5] )
+    #set( $body_param = $params[6] )
 
-    public Response ${method_name}(<${method_name}_method_params>) {
+    public Response ${method_name}(#if( ${method_params} != "NO" ) ${method_params} #end) {
             return given()
                     .spec(configuration.getRequestSpecification())
-                    <${method_name}_method_query_params>
-                    <${method_name}_method_body>
+                    #if( $path_params != "NO" )
+                    .pathParams(${path_params})
+                    #end
+                    #if( $query_params != "NO" )
+                    .queryParams(${query_params})
+                    #end
+                    #if( $body_param != "NO" )
+                    .body(${body_param})
+                    #end
                     .when()
-                    .${http_method_name}(${path_name}_PATH<${method_name}_method_path_params>);
+                    .${http_method_name}(${path_name}_PATH);
         }
 #end
 }

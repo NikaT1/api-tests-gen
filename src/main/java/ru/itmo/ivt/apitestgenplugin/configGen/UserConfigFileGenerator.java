@@ -15,7 +15,7 @@ import ru.itmo.ivt.apitestgenplugin.model.enums.AuthType;
 import java.util.*;
 
 public class UserConfigFileGenerator {
-    private static final String DEFAULT_PROPERTY_VALUE = "";
+    private static final String DEFAULT_PROPERTY_VALUE = "true";
     private static final String DEFAULT_PROPERTIES_FILE_NAME = "application.properties";
     private static final String DEFAULT_PROPERTY_MANAGER_NAME = "TestPropertiesManager.java";
     private static final String DEFAULT_REST_ASSURED_CONFIG_NAME = "RestAssuredConfiguration.java";
@@ -102,7 +102,6 @@ public class UserConfigFileGenerator {
     }
 
     private static void setAuthProperty(AuthType authType, Properties properties) {
-        System.out.println("authType " + authType.name());
         switch (authType) {
             case NO -> properties.setProperty("NO_AUTH", DEFAULT_PROPERTY_VALUE);
             case TOKEN -> properties.setProperty("TOKEN_AUTH", DEFAULT_PROPERTY_VALUE);

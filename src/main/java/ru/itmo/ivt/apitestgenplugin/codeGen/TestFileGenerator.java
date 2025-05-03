@@ -8,7 +8,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import io.swagger.v3.oas.models.Operation;
 import ru.itmo.ivt.apitestgenplugin.model.GenerationContext;
-import ru.itmo.ivt.apitestgenplugin.model.PathItemWithEndPoint;
+import ru.itmo.ivt.apitestgenplugin.model.openapi.ApiMethodParam;
+import ru.itmo.ivt.apitestgenplugin.model.openapi.PathItemWithEndPoint;
 
 import java.util.*;
 import static ru.itmo.ivt.apitestgenplugin.util.OpenApiUtils.*;
@@ -37,21 +38,7 @@ public class TestFileGenerator {
 
             String fileContent = template.getText(properties);
 
-            return WriteCommandAction.writeCommandAction(project)
-                    .compute(() -> {
-                        PsiFileFactory factory = PsiFileFactory.getInstance(project);
-                        String fileName = operationName + "Test.java";
-                        PsiFile psiFile = factory.createFileFromText(
-                                fileName,
-                                JavaFileType.INSTANCE,
-                                fileContent
-                        );
-                        PsiFile prevFile = directory.findFile(fileName);
-                        if (prevFile != null) {
-                            return prevFile;
-                        }
-                        return (PsiFile) directory.add(psiFile);
-                    });
+            return createFile(project, operationName + "Test.java", fileContent, directory);
         } catch (Exception e) {
             throw new RuntimeException("Failed to create test file", e);
         }
@@ -76,7 +63,7 @@ public class TestFileGenerator {
                     String operationName = op.getOperationId();
                     String pathName = camelToSnakeCase(operationName);
                     pathsWithNames.put(pathName, path.path());
-                    operationsWithPathAndMethod.put(pathName, operationName + " " + method);
+                    operationsWithPathAndMethod.put(pathName, getMethodInfo(op, method));
                     methodNames.add(operationName);
                 });
             }
@@ -88,26 +75,28 @@ public class TestFileGenerator {
             properties.setProperty("OPERATIONS", mapToString(operationsWithPathAndMethod));
 
             String fileContent = template.getText(properties);
-
-            PsiFile createdFile = WriteCommandAction.writeCommandAction(context.getProject())
-                    .compute(() -> {
-                                PsiFileFactory factory = PsiFileFactory.getInstance(context.getProject());
-                                String fileName = clientName + ".java";
-                                PsiFile psiFile = factory.createFileFromText(
-                                        fileName,
-                                        JavaFileType.INSTANCE,
-                                        fileContent
-                                );
-                                PsiFile prevFile = outputDirectory.findFile(fileName);
-                                if (prevFile != null) {
-                                    return prevFile;
-                                }
-                                return (PsiFile) outputDirectory.add(psiFile);
-                            });
+            PsiFile createdFile = createFile(context.getProject(), clientName + ".java", fileContent, outputDirectory);
             context.getClientFiles().put(clientName, createdFile);
             return methodNames;
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate API clients", e);
         }
+    }
+
+    private static PsiFile createFile(Project project, String fileName, String fileContent, PsiDirectory directory) {
+        return WriteCommandAction.writeCommandAction(project)
+                .compute(() -> {
+                    PsiFileFactory factory = PsiFileFactory.getInstance(project);
+                    PsiFile psiFile = factory.createFileFromText(
+                            fileName,
+                            JavaFileType.INSTANCE,
+                            fileContent
+                    );
+                    PsiFile prevFile = directory.findFile(fileName);
+                    if (prevFile != null) {
+                        return prevFile;
+                    }
+                    return (PsiFile) directory.add(psiFile);
+                });
     }
 }

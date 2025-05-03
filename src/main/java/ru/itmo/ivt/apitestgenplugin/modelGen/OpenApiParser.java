@@ -55,10 +55,10 @@ public class OpenApiParser {
 
         // manage data models by packages
         Map<String, List<String>> modelsByControllers = getModelsByControllers(result.getOpenAPI().getPaths());
-        Map<String, PsiFile> models = packagesManager.splitModelFilesByDirectories(modelsByControllers, getModelsPackagePath(), context.getProject());
+       // Map<String, PsiFile> models = packagesManager.splitModelFilesByDirectories(modelsByControllers, getModelsPackagePath(), context.getProject());
 
         context.setOpenAPI(result.getOpenAPI());
-        context.setModelFilesByPackages(models);
+        //context.setModelFilesByPackages(models);
         return context;
     }
 

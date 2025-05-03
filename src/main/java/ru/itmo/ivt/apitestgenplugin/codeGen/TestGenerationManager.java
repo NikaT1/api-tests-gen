@@ -4,7 +4,7 @@ import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiFile;
 import io.swagger.v3.oas.models.Operation;
 import ru.itmo.ivt.apitestgenplugin.model.GenerationContext;
-import ru.itmo.ivt.apitestgenplugin.model.PathItemWithEndPoint;
+import ru.itmo.ivt.apitestgenplugin.model.openapi.PathItemWithEndPoint;
 
 import java.util.*;
 
@@ -51,11 +51,10 @@ public class TestGenerationManager {
             Map<String, Operation> operations = getOperations(pathItem);
 
             operations.forEach((httpMethod, operation) -> {
-                String controllerName = getControllerName(operation);
-                System.out.println(controllerName + " " + camelToSnakeCase(controllerName));
+                String controllerName = kebabToSnakeCase(getControllerName(operation));
                 String operationName = getOperationName(operation, httpMethod);
 
-                PsiDirectory controllerDir = createSubDirectory(context.getProject(), testDir, camelToSnakeCase(controllerName));
+                PsiDirectory controllerDir = createSubDirectory(context.getProject(), testDir, controllerName);
                 if (controllerDir == null) return;
 
                 List<String> tests = generateTestNames(operation);

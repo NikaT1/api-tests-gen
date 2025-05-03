@@ -639,7 +639,7 @@
         "tags": [
           "fabric-texture-controller"
         ],
-        "operationId": "deleteLocationById_1",
+        "operationId": "deleteFabricTextureById",
         "parameters": [
           {
             "name": "fabricTextureId",

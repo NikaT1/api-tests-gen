@@ -1,8 +1,8 @@
 base_url=${BASE_URL|'<service_base_url>'}
-#if (${BASIC_AUTH})
+#if (${BASIC_AUTH} && ${BASIC_AUTH} != "")
 username=<your_username>
 password=<your_password>
 #end
-#if (${TOKEN_AUTH})
+#if (${TOKEN_AUTH} && ${TOKEN_AUTH} != "")
 token=<auth_token>
 #end

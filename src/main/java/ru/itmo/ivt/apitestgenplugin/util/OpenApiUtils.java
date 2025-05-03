@@ -9,10 +9,14 @@ import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import lombok.experimental.UtilityClass;
-import ru.itmo.ivt.apitestgenplugin.model.PathItemWithEndPoint;
+import ru.itmo.ivt.apitestgenplugin.model.openapi.ApiMethodParam;
+import ru.itmo.ivt.apitestgenplugin.model.openapi.PathItemWithEndPoint;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static ru.itmo.ivt.apitestgenplugin.util.SchemaUtils.extractObjectTypeFromBody;
+import static ru.itmo.ivt.apitestgenplugin.util.SchemaUtils.mapSchemaToJavaType;
 
 @UtilityClass
 public class OpenApiUtils {
@@ -69,7 +73,6 @@ public class OpenApiUtils {
     public static List<String> extractSchemasFromOperation(Operation operation) {
         List<String> schemas = new ArrayList<>();
 
-        // Обрабатываем request body
         if (operation.getRequestBody() != null
                 && operation.getRequestBody().getContent() != null) {
             operation.getRequestBody().getContent().values().stream()
@@ -79,7 +82,6 @@ public class OpenApiUtils {
                     .forEach(schemas::addAll);
         }
 
-        // Обрабатываем responses
         if (operation.getResponses() != null) {
             operation.getResponses().values().stream()
                     .map(ApiResponse::getContent)
@@ -113,5 +115,35 @@ public class OpenApiUtils {
         }
 
         return schemas;
+    }
+
+    public static List<ApiMethodParam> extractParamsForOperation(Operation operation, String modelsPackage) {
+        List<ApiMethodParam> params = new ArrayList<>();
+        if (operation.getParameters() == null) {
+            return List.of();
+        }
+        operation.getParameters().stream()
+                .filter(p -> "path".equals(p.getIn()))
+                .forEach(p -> params.add(new ApiMethodParam(
+                        mapSchemaToJavaType(p.getSchema(), modelsPackage),
+                        p.getName(),
+                        true, false, false
+                )));
+        operation.getParameters().stream()
+                .filter(p -> "query".equals(p.getIn()))
+                .forEach(p -> params.add(new ApiMethodParam(
+                        mapSchemaToJavaType(p.getSchema(), modelsPackage),
+                        p.getName(),
+                        false, true, false
+                )));
+        if (operation.getRequestBody() != null) {
+            params.add(new ApiMethodParam(
+                    extractObjectTypeFromBody(operation.getRequestBody(), modelsPackage),
+                    "requestBody",
+                    false, false, true
+            ));
+        }
+
+        return params;
     }
 }

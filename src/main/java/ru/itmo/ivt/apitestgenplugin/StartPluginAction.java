@@ -35,7 +35,7 @@ public class StartPluginAction extends AnAction {
                 context.setUserInput(userInput);
 
                 //String targetDir = e.getData(PlatformDataKeys.VIRTUAL_FILE).getParent().getCanonicalPath();
-                String targetDir = "C:/Users/пользователь/IdeaProjects/demo1/src"; // only for testing
+                //String targetDir = "C:/Users/пользователь/IdeaProjects/demo1/src"; // only for testing
                 //PsiDirectory srcDir = createPsiDirectoryFromPath(project, targetDir);
                 PsiDirectory srcDir = getSrcDirectory(project);
 
