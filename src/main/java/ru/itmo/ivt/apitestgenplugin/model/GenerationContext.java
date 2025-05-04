@@ -5,6 +5,8 @@ import com.intellij.psi.PsiFile;
 import io.swagger.v3.oas.models.OpenAPI;
 import lombok.Getter;
 import lombok.Setter;
+import ru.itmo.ivt.apitestgenplugin.model.userconfig.ModelConfiguration;
+import ru.itmo.ivt.apitestgenplugin.model.userconfig.TestConfiguration;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,4 +23,6 @@ public class GenerationContext {
     private Map<String, PsiFile> clientFiles = new HashMap<>();
     private Map<String, List<String>> methodNamesByClients = new HashMap<>();
     private OpenAPI openAPI;
+    private ModelConfiguration modelConfiguration;
+    private TestConfiguration testConfiguration;
 }

@@ -38,7 +38,7 @@ public class StartPluginAction extends AnAction {
                 context.setUserInput(userInput);
                 PsiDirectory srcDir = getSrcDirectory(project);
 
-                parserManager.prepareGeneratorContext(userInput.openApiPath(), srcDir.getVirtualFile().getCanonicalPath(), context);
+                parserManager.prepareGeneratorContext(userInput, srcDir.getVirtualFile().getCanonicalPath(), context);
                 CompletableFuture<Void> configFuture = CompletableFuture.runAsync(() ->
                         configGenerationManager.fillConfigFiles(srcDir, context));
 
