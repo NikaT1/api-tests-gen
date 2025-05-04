@@ -57,19 +57,23 @@ public class TestFileGenerator {
             List<String> methodNames = new ArrayList<>();
             Map<String, String> pathsWithNames = new HashMap<>();
             Map<String, String> operationsWithPathAndMethod = new HashMap<>();
+            Set<String> imports = new HashSet<>();
             for (PathItemWithEndPoint path : paths) {
                 Map<String, Operation> operations = getOperations(path.pathItem());
                 operations.forEach((method, op) -> {
                     String operationName = op.getOperationId();
                     String pathName = camelToSnakeCase(operationName);
                     pathsWithNames.put(pathName, path.path());
-                    operationsWithPathAndMethod.put(pathName, getMethodInfo(op, method));
+                    List<ApiMethodParam> params = extractParamsForOperation(op, "models");
+                    imports.addAll(params.stream().flatMap(p -> p.type().importPath().stream()).toList());
+                    operationsWithPathAndMethod.put(pathName, getMethodInfo(params, method, operationName));
                     methodNames.add(operationName);
                 });
             }
 
             Properties properties = new Properties();
             properties.setProperty("PACKAGE_NAME", DEFAULT_CLIENTS_PACKAGE);
+            properties.setProperty("IMPORTS", mapToString(imports));
             properties.setProperty("CONTROLLER_NAME", clientName);
             properties.setProperty("END_POINTS", mapToString(pathsWithNames));
             properties.setProperty("OPERATIONS", mapToString(operationsWithPathAndMethod));

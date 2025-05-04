@@ -2,6 +2,9 @@
 package ${PACKAGE_NAME};
 #end
 
+#foreach( $import in $IMPORTS.split("\n") )
+import ${import};
+#end
 import config.RestAssuredConfiguration;
 import io.restassured.response.Response;
 

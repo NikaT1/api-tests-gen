@@ -55,6 +55,7 @@ public class ConfigGenerationManager {
         mavenDependencyGenerator.addJacksonDependency();
         mavenDependencyGenerator.addJunit5Dependency();
         mavenDependencyGenerator.addLombokDependency();
+        mavenDependencyGenerator.addJavaFakerDependency();
         mavenDependencyGenerator.addAllureDependencyAndPlugins();
     }
 

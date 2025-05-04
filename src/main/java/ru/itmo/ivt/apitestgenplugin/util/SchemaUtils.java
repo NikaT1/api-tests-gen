@@ -1,17 +1,18 @@
 package ru.itmo.ivt.apitestgenplugin.util;
 
-import io.swagger.v3.oas.models.media.ArraySchema;
-import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
 import lombok.experimental.UtilityClass;
 import ru.itmo.ivt.apitestgenplugin.model.openapi.TypeWithImport;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @UtilityClass
 public class SchemaUtils {
     private static final List<String> NO_IMPORT = List.of();
+    private static final String DEFAULT_MEDIA_TYPE = "application/json";
 
     public static TypeWithImport mapSchemaToJavaType(Schema<?> schema, String modelsPackage) {
         if (schema == null) {
@@ -46,13 +47,10 @@ public class SchemaUtils {
         TypeWithImport type = new TypeWithImport("Object", NO_IMPORT);
         if (requestBody.get$ref() != null) {
             type = extractObjectType(requestBody.get$ref(), modelsPackage);
+        } else if (requestBody.getContent() != null && requestBody.getContent().get(DEFAULT_MEDIA_TYPE) != null) {
+            type = extractObjectType(requestBody.getContent().get(DEFAULT_MEDIA_TYPE).getSchema().get$ref(), modelsPackage);
         }
         return type;
-    }
-
-    private static TypeWithImport extractObjectType(String ref, String modelsPackage) {
-        String modelName = ref.substring(ref.lastIndexOf('/') + 1);
-        return new TypeWithImport(modelName, List.of(getModelImport(modelsPackage, modelName)));
     }
 
     public static TypeWithImport mapOpenApiTypeToJavaType(String openApiType, String format) {
@@ -76,6 +74,228 @@ public class SchemaUtils {
             case SchemaTypeUtil.BOOLEAN_TYPE -> new TypeWithImport("Boolean", NO_IMPORT);
             default -> new TypeWithImport("Object", NO_IMPORT);
         };
+    }
+
+    public static boolean hasConstraints(Schema<?> schema) {
+        if (schema == null) {
+            return false;
+        }
+        if (schema instanceof StringSchema) {
+            StringSchema stringSchema = (StringSchema) schema;
+            return stringSchema.getMaxLength() != null
+                    || stringSchema.getMinLength() != null
+                    || stringSchema.getPattern() != null
+                    || stringSchema.getFormat() != null
+                    || (stringSchema.getEnum() != null && !stringSchema.getEnum().isEmpty());
+        }
+        else if (schema instanceof IntegerSchema) {
+            IntegerSchema intSchema = (IntegerSchema) schema;
+            return intSchema.getMaximum() != null
+                    || intSchema.getMinimum() != null
+                    || intSchema.getExclusiveMaximum() != null
+                    || intSchema.getExclusiveMinimum() != null
+                    || intSchema.getMultipleOf() != null;
+        }
+        else if (schema instanceof NumberSchema) {
+            NumberSchema numSchema = (NumberSchema) schema;
+            return numSchema.getMaximum() != null
+                    || numSchema.getMinimum() != null
+                    || numSchema.getExclusiveMaximum() != null
+                    || numSchema.getExclusiveMinimum() != null
+                    || numSchema.getMultipleOf() != null;
+        }
+        else if (schema instanceof ArraySchema) {
+            ArraySchema arraySchema = (ArraySchema) schema;
+            return arraySchema.getMaxItems() != null
+                    || arraySchema.getMinItems() != null
+                    || arraySchema.getUniqueItems() != null
+                    || hasConstraints(arraySchema.getItems());
+        }
+        else if (schema instanceof ObjectSchema) {
+            ObjectSchema objSchema = (ObjectSchema) schema;
+            return objSchema.getMaxProperties() != null
+                    || objSchema.getMinProperties() != null
+                    || (objSchema.getProperties() != null && !objSchema.getProperties().isEmpty())
+                    || (objSchema.getRequired() != null && !objSchema.getRequired().isEmpty());
+        }
+        else if (schema instanceof BooleanSchema) {
+            return false;
+        }
+        else if (schema instanceof DateTimeSchema
+                || schema instanceof DateSchema
+                || schema instanceof PasswordSchema
+                || schema instanceof EmailSchema
+                || schema instanceof UUIDSchema) {
+            return schema.getPattern() != null
+                    || schema.getEnum() != null
+                    || schema.getNullable() != null;
+        }
+        else if (schema instanceof ComposedSchema composedSchema) {
+            return (composedSchema.getAllOf() != null && !composedSchema.getAllOf().isEmpty())
+                    || (composedSchema.getAnyOf() != null && !composedSchema.getAnyOf().isEmpty())
+                    || (composedSchema.getOneOf() != null && !composedSchema.getOneOf().isEmpty())
+                    || (composedSchema.getNot() != null);
+        }
+
+        return false;
+    }
+
+    public static String getFieldValue(Schema<?> schema, boolean correct) {
+        if (schema == null) {
+            return "null";
+        }
+
+        if (schema instanceof StringSchema) {
+            StringSchema stringSchema = (StringSchema) schema;
+            if (!correct) {
+                return "null";
+            }
+            if (stringSchema.getEnum() != null && !stringSchema.getEnum().isEmpty()) {
+                return "\"" + stringSchema.getEnum().get(0) + "\"";
+            }
+            int length = stringSchema.getMaxLength() != null ?
+                    Math.max(1, stringSchema.getMaxLength() / 2) : 10;
+            return "Faker.instance().lorem().characters(" + length + ")";
+        }
+        else if (schema instanceof IntegerSchema) {
+            if (!correct) {
+                return "null";
+            }
+            IntegerSchema intSchema = (IntegerSchema) schema;
+            if (intSchema.getEnum() != null && !intSchema.getEnum().isEmpty()) {
+                return intSchema.getEnum().get(0).toString();
+            }
+            return "Faker.instance().number().randomNumber()";
+        }
+        else if (schema instanceof NumberSchema) {
+            if (!correct) {
+                return "null";
+            }
+            NumberSchema numSchema = (NumberSchema) schema;
+            if (numSchema.getEnum() != null && !numSchema.getEnum().isEmpty()) {
+                return numSchema.getEnum().get(0).toString();
+            }
+            return "Faker.instance().number().randomDouble(2, 1, 100)";
+        }
+        else if (schema instanceof BooleanSchema) {
+            return correct ? "true" : "false";
+        }
+        else if (schema instanceof ArraySchema) {
+            ArraySchema arraySchema = (ArraySchema) schema;
+            if (!correct) {
+                return "null";
+            }
+            return "java.util.Arrays.asList(" + getFieldValue(arraySchema.getItems(), true) + ")";
+        }
+        else if (schema instanceof ObjectSchema) {
+            return correct ? "new Object()" : "null";
+        }
+        else if (schema instanceof DateTimeSchema) {
+            return correct ?
+                    "java.time.OffsetDateTime.now().format(java.time.format.DateTimeFormatter.ISO_DATE_TIME)" :
+                    "\"invalid-date\"";
+        }
+        else if (schema instanceof DateSchema) {
+            return correct ?
+                    "java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ISO_DATE)" :
+                    "\"invalid-date\"";
+        }
+        else if (schema instanceof EmailSchema) {
+            return correct ?
+                    "\"user@example.com\"" :
+                    "\"invalid-email\"";
+        }
+        else if (schema instanceof UUIDSchema) {
+            return correct ?
+                    "java.util.UUID.randomUUID().toString()" :
+                    "\"invalid-uuid\"";
+        }
+        else if (schema instanceof PasswordSchema) {
+            return correct ?
+                    "\"Password1!\"" :
+                    "\"weak\"";
+        }
+
+        return "null";
+    }
+
+    public static String getIncorrectFieldValue(Schema<?> schema) {
+        if (schema == null) {
+            return "null";
+        }
+
+        if (schema instanceof StringSchema) {
+            StringSchema stringSchema = (StringSchema) schema;
+            if (stringSchema.getEnum() != null && !stringSchema.getEnum().isEmpty()) {
+                return "\"invalid-enum-value\"";
+            }
+            if (stringSchema.getMaxLength() != null) {
+                return "Faker.instance().lorem().characters(" + (stringSchema.getMaxLength() + 10) + ")";
+            }
+            if (stringSchema.getPattern() != null) {
+                return "\"does-not-match-pattern\"";
+            }
+            return "null";
+        }
+        else if (schema instanceof IntegerSchema) {
+            IntegerSchema intSchema = (IntegerSchema) schema;
+            if (intSchema.getEnum() != null && !intSchema.getEnum().isEmpty()) {
+                return "999999999";
+            }
+            if (intSchema.getMaximum() != null) {
+                return String.valueOf(intSchema.getMaximum().add(new BigDecimal("1")));
+            }
+            if (intSchema.getMinimum() != null) {
+                return String.valueOf(intSchema.getMinimum().add(new BigDecimal("-1")));
+            }
+            return "null";
+        }
+        else if (schema instanceof NumberSchema) {
+            NumberSchema numSchema = (NumberSchema) schema;
+            if (numSchema.getEnum() != null && !numSchema.getEnum().isEmpty()) {
+                return "999999.99";
+            }
+            if (numSchema.getMaximum() != null) {
+                return String.valueOf(numSchema.getMaximum().add(new BigDecimal("1.0")));
+            }
+            if (numSchema.getMinimum() != null) {
+                return String.valueOf(numSchema.getMinimum().add(new BigDecimal("-1.0")));
+            }
+            return "null";
+        }
+        else if (schema instanceof BooleanSchema) {
+            return "\"not-a-boolean\"";
+        }
+        else if (schema instanceof ArraySchema) {
+            ArraySchema arraySchema = (ArraySchema) schema;
+            if (arraySchema.getMaxItems() != null) {
+                return "java.util.Collections.nCopies(" + (arraySchema.getMaxItems() + 5) +
+                        ", " + getFieldValue(arraySchema.getItems(), true) + ")";
+            }
+            return "null";
+        }
+        else if (schema instanceof DateTimeSchema) {
+            return "\"2023-13-01T25:61:61Z\"";
+        }
+        else if (schema instanceof DateSchema) {
+            return "\"2023-13-01\"";
+        }
+        else if (schema instanceof EmailSchema) {
+            return "\"not-an-email\"";
+        }
+        else if (schema instanceof UUIDSchema) {
+            return "\"not-a-uuid\"";
+        }
+        else if (schema instanceof PasswordSchema) {
+            return "\"short\"";
+        }
+
+        return "null";
+    }
+
+    private static TypeWithImport extractObjectType(String ref, String modelsPackage) {
+        String modelName = ref.substring(ref.lastIndexOf('/') + 1);
+        return new TypeWithImport(modelName, List.of(getModelImport(modelsPackage, modelName)));
     }
 
     private static String getModelImport(String modelPackage, String modelName) {

@@ -33,6 +33,11 @@ public class MavenDependencyGenerator {
         addMavenDependency("org.projectlombok", "lombok", "${projectlombok.version}", "provided");
     }
 
+    public void addJavaFakerDependency() {
+        addProperty("java.faker.version", "0.2.5");
+        addMavenDependency("io.github.regychang", "java-faker", "${java.faker.version}");
+    }
+
     public void addAllureDependencyAndPlugins() {
         addProperty("maven.compiler.plugin.version", "3.10.1");
         addProperty("maven.surefire.plugin.version", "3.0.0-M7");

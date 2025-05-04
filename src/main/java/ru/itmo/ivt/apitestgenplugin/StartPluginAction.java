@@ -13,6 +13,9 @@ import ru.itmo.ivt.apitestgenplugin.model.GenerationContext;
 import ru.itmo.ivt.apitestgenplugin.model.UserInput;
 import ru.itmo.ivt.apitestgenplugin.modelGen.ParserManager;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 import static ru.itmo.ivt.apitestgenplugin.util.FileUtils.getSrcDirectory;
 
 public class StartPluginAction extends AnAction {
@@ -33,16 +36,23 @@ public class StartPluginAction extends AnAction {
                 GenerationContext context = new GenerationContext();
                 context.setProject(project);
                 context.setUserInput(userInput);
-
-                //String targetDir = e.getData(PlatformDataKeys.VIRTUAL_FILE).getParent().getCanonicalPath();
-                //String targetDir = "C:/Users/пользователь/IdeaProjects/demo1/src"; // only for testing
-                //PsiDirectory srcDir = createPsiDirectoryFromPath(project, targetDir);
                 PsiDirectory srcDir = getSrcDirectory(project);
 
                 parserManager.prepareGeneratorContext(userInput.openApiPath(), srcDir.getVirtualFile().getCanonicalPath(), context);
-                configGenerationManager.fillConfigFiles(srcDir, context);
-                testGenerationManager.generateClientsAndTests(srcDir, context);
-                dataGenerationManager.fillClientsAndTests(srcDir, context);
+                CompletableFuture<Void> configFuture = CompletableFuture.runAsync(() ->
+                        configGenerationManager.fillConfigFiles(srcDir, context));
+
+                CompletableFuture<Void> dataFuture = CompletableFuture.runAsync(() -> {
+                        dataGenerationManager.generateDataFiles(srcDir, context);
+                        testGenerationManager.generateClientsAndTests(srcDir, context);
+                });
+
+                try {
+                    CompletableFuture.allOf(configFuture, dataFuture).get();
+                } catch (InterruptedException | ExecutionException ex) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Error during parallel execution", ex);
+                }
             }
         });
     }

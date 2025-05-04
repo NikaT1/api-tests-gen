@@ -42,7 +42,6 @@ public class OpenApiParser {
     private final String outputPackage;
 
     @SneakyThrows
-    // TODO добавить опцию по переносу всего в schemas
     public GenerationContext fillContext(GenerationContext context) {
         File outputDirectoryFile = new File(outputDirectory);
         SwaggerParseResult result = OPEN_API_PARSER.readLocation(filePath, null, PARSE_OPTIONS);
@@ -55,7 +54,7 @@ public class OpenApiParser {
 
         // manage data models by packages
         Map<String, List<String>> modelsByControllers = getModelsByControllers(result.getOpenAPI().getPaths());
-       // Map<String, PsiFile> models = packagesManager.splitModelFilesByDirectories(modelsByControllers, getModelsPackagePath(), context.getProject());
+        // Map<String, PsiFile> models = packagesManager.splitModelFilesByDirectories(modelsByControllers, getModelsPackagePath(), context.getProject());
 
         context.setOpenAPI(result.getOpenAPI());
         //context.setModelFilesByPackages(models);

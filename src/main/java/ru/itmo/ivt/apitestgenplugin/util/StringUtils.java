@@ -7,6 +7,7 @@ import ru.itmo.ivt.apitestgenplugin.model.openapi.ApiMethodParam;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -59,6 +60,10 @@ public class StringUtils {
                 .collect(Collectors.joining("\n"));
     }
 
+    public static String mapToString(Set<String> set) {
+        return String.join("\n", set);
+    }
+
     public static String getControllerName(Operation operation) {
         if (operation.getTags() != null && !operation.getTags().isEmpty()) {
             return operation.getTags().get(0);
@@ -105,9 +110,8 @@ public class StringUtils {
                 .orElse(DEFAULT_PARAM_VALUE);
     }
 
-    public static String getMethodInfo(Operation operation, String method) {
-        List<ApiMethodParam> params = extractParamsForOperation(operation, "models");
-        return operation.getOperationId() + "=" +
+    public static String getMethodInfo(List<ApiMethodParam> params, String method, String operationName) {
+        return operationName + "=" +
                 method + "=" +
                 getMethodParams(params) + "=" +
                 getPathParams(params) + "=" +

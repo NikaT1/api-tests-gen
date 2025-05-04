@@ -119,23 +119,22 @@ public class OpenApiUtils {
 
     public static List<ApiMethodParam> extractParamsForOperation(Operation operation, String modelsPackage) {
         List<ApiMethodParam> params = new ArrayList<>();
-        if (operation.getParameters() == null) {
-            return List.of();
+        if (operation.getParameters() != null) {
+            operation.getParameters().stream()
+                    .filter(p -> "path".equals(p.getIn()))
+                    .forEach(p -> params.add(new ApiMethodParam(
+                            mapSchemaToJavaType(p.getSchema(), modelsPackage),
+                            p.getName(),
+                            true, false, false
+                    )));
+            operation.getParameters().stream()
+                    .filter(p -> "query".equals(p.getIn()))
+                    .forEach(p -> params.add(new ApiMethodParam(
+                            mapSchemaToJavaType(p.getSchema(), modelsPackage),
+                            p.getName(),
+                            false, true, false
+                    )));
         }
-        operation.getParameters().stream()
-                .filter(p -> "path".equals(p.getIn()))
-                .forEach(p -> params.add(new ApiMethodParam(
-                        mapSchemaToJavaType(p.getSchema(), modelsPackage),
-                        p.getName(),
-                        true, false, false
-                )));
-        operation.getParameters().stream()
-                .filter(p -> "query".equals(p.getIn()))
-                .forEach(p -> params.add(new ApiMethodParam(
-                        mapSchemaToJavaType(p.getSchema(), modelsPackage),
-                        p.getName(),
-                        false, true, false
-                )));
         if (operation.getRequestBody() != null) {
             params.add(new ApiMethodParam(
                     extractObjectTypeFromBody(operation.getRequestBody(), modelsPackage),
