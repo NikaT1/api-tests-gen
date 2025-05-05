@@ -27,6 +27,11 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
         <internalFileTemplate name="TestClassTemplate.java"/>
+        <internalFileTemplate name="ClientClassTemplate.java"/>
+        <internalFileTemplate name="DataGeneratorTemplate.java"/>
+        <internalFileTemplate name="PropertiesHelperTemplate.java"/>
+        <internalFileTemplate name="PropertiesTemplate.properties"/>
+        <internalFileTemplate name="RestAssuredTemplate.java"/>
     </extensions>
     <actions>
         <action id="ru.itmo.ivt.apitestgenplugin.StartPluginAction"

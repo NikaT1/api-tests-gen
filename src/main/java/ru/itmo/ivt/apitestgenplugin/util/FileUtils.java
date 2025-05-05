@@ -4,6 +4,7 @@ import com.intellij.codeInsight.actions.OptimizeImportsProcessor;
 import com.intellij.codeInsight.actions.ReformatCodeProcessor;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.util.Computable;
@@ -11,7 +12,9 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiFileFactory;
 import com.intellij.psi.PsiManager;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 
@@ -19,6 +22,27 @@ import java.io.File;
 
 @UtilityClass
 public class FileUtils {
+    public static void createFile(@NotNull Project project,
+                                  @NotBlank String fileContent,
+                                  @NotNull PsiDirectory directory,
+                                  @NotBlank String fileName,
+                                  @NotNull FileType fileType) {
+        WriteCommandAction.writeCommandAction(project)
+                .compute(() -> {
+                    PsiFileFactory factory = PsiFileFactory.getInstance(project);
+                    PsiFile psiFile = factory.createFileFromText(
+                            fileName,
+                            fileType,
+                            fileContent
+                    );
+                    PsiFile prevFile = directory.findFile(fileName);
+                    if (prevFile != null) {
+                        return prevFile;
+                    }
+                    return (PsiFile) directory.add(psiFile);
+                });
+    }
+
     public static PsiDirectory getSrcDirectory(@NotNull Project project) {
         return ReadAction.compute(() -> {
             VirtualFile projectDir = ProjectUtil.guessProjectDir(project);
@@ -38,16 +62,29 @@ public class FileUtils {
         });
     }
 
-    public static PsiDirectory createSubDirectory(Project project,
-                                                  PsiDirectory baseDir,
-                                                  String dir) {
+    public static PsiDirectory createNestedDirectories(@NotNull Project project,
+                                                       @NotNull PsiDirectory baseDir,
+                                                       @NotBlank String path) {
+        String[] parts = path.split("/");
+        PsiDirectory currentDir = baseDir;
+        for (String dirName : parts) {
+            if (dirName.isEmpty()) continue;
+            currentDir = createSubDirectory(project, currentDir, dirName);
+            if (currentDir == null) {
+                return null;
+            }
+        }
+        return currentDir;
+    }
+
+    public static PsiDirectory createSubDirectory(@NotNull Project project,
+                                                  @NotNull PsiDirectory baseDir,
+                                                  @NotBlank String dir) {
         try {
             PsiDirectory existingDir = baseDir.findSubdirectory(dir);
             if (existingDir != null) return existingDir;
 
-            return WriteCommandAction.runWriteCommandAction(project, (Computable<PsiDirectory>) () -> {
-                return baseDir.createSubdirectory(dir);
-            });
+            return WriteCommandAction.runWriteCommandAction(project, (Computable<PsiDirectory>) () -> baseDir.createSubdirectory(dir));
         } catch (Exception e) {
             return null;
         }
