@@ -1,7 +1,10 @@
 package ru.itmo.ivt.apitestgenplugin;
 
+import com.intellij.openapi.fileChooser.FileChooser;
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
@@ -28,6 +31,9 @@ public class InputDialog extends DialogWrapper {
         super(project);
         init();
         setTitle("Generate API Tests");
+        setupFileChooser(openApiSpecButton, openApiSpecTextField, "Выберите OpenAPI спецификацию", false);
+        setupFileChooser(testConfigButton, testConfigField, "Выберите конфигурацию тестов", false);
+        setupFileChooser(dataConfigButton, dataConfigField, "Выберите конфигурацию модели данных", false);
     }
 
     @Override
@@ -87,5 +93,17 @@ public class InputDialog extends DialogWrapper {
                 .authType(noAuthRadioButton.isSelected() ? AuthType.NO : basicAuthRadioButton.isSelected() ? AuthType.BASIC : AuthType.TOKEN)
                 .baseUrl(baseUrlField.getText())
                 .build();
+    }
+
+    private void setupFileChooser(JButton button, JTextField textField, String title, boolean directoriesOnly) {
+        button.addActionListener(e -> {
+            FileChooserDescriptor descriptor = new FileChooserDescriptor(!directoriesOnly, directoriesOnly, false, false, false, false);
+            descriptor.setTitle(title);
+
+            VirtualFile chosenFile = FileChooser.chooseFile(descriptor, getContentPanel(), null, null);
+            if (chosenFile != null) {
+                textField.setText(chosenFile.getPath());
+            }
+        });
     }
 }

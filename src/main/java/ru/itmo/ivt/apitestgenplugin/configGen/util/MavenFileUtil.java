@@ -20,12 +20,9 @@ public class MavenFileUtil {
     public static XmlFile getMavenFile(PsiDirectory srcDir, Project project) {
         PsiDirectory projectPsiDir = srcDir.getParentDirectory();
         assert projectPsiDir != null;
-
         VirtualFile projectDir = projectPsiDir.getVirtualFile();
-
         VirtualFile pomFile = projectDir.findChild(DEFAULT_MAVEN_FILE_NAME);
         assert pomFile != null;
-
         PsiFile psiFile = PsiManager.getInstance(project).findFile(pomFile);
         assert psiFile instanceof XmlFile;
         return (XmlFile) psiFile;
@@ -114,7 +111,6 @@ public class MavenFileUtil {
                 goalsTag = executionTag.createChildTag("goals", executionTag.getNamespace(), null, false);
                 executionTag.add(goalsTag);
             }
-
             XmlTag goalTag = goalsTag.createChildTag("goal", goalsTag.getNamespace(), goal, false);
             goalsTag.add(goalTag);
         }
