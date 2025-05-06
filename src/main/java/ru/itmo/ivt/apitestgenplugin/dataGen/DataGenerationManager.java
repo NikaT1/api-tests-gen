@@ -29,7 +29,8 @@ public class DataGenerationManager {
         models.values().forEach(psiFile -> {
             String fileName = psiFile.getName();
             String className = fileName.substring(0, fileName.lastIndexOf('.'));
-            DataGenMethodGenerator generator = new DataGenMethodGenerator(className, openAPI.getComponents().getSchemas().get(className));
+            DataGenMethodGenerator generator = new DataGenMethodGenerator(className,
+                    openAPI.getComponents().getSchemas().get(className));
             createModelGeneratorFile(context.getProject(), directory, DEFAULT_GENERATORS_PACKAGE, generator);
         });
     }
