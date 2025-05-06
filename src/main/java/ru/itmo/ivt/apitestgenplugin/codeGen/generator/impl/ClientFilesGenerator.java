@@ -1,50 +1,43 @@
-package ru.itmo.ivt.apitestgenplugin.codeGen;
+package ru.itmo.ivt.apitestgenplugin.codeGen.generator.impl;
 
 import com.intellij.ide.fileTemplates.FileTemplate;
 import com.intellij.ide.fileTemplates.FileTemplateManager;
 import com.intellij.ide.highlighter.JavaFileType;
-import com.intellij.openapi.command.WriteCommandAction;
-import com.intellij.openapi.project.Project;
-import com.intellij.psi.*;
+import com.intellij.psi.PsiDirectory;
+import com.intellij.psi.PsiFile;
 import io.swagger.v3.oas.models.Operation;
+import ru.itmo.ivt.apitestgenplugin.codeGen.generator.CodeGenerator;
 import ru.itmo.ivt.apitestgenplugin.model.GenerationContext;
 import ru.itmo.ivt.apitestgenplugin.model.openapi.ApiMethodParam;
 import ru.itmo.ivt.apitestgenplugin.model.openapi.PathItemWithEndPoint;
 
 import java.util.*;
+
+import static ru.itmo.ivt.apitestgenplugin.util.FileUtils.*;
 import static ru.itmo.ivt.apitestgenplugin.util.OpenApiUtils.*;
 import static ru.itmo.ivt.apitestgenplugin.util.StringUtils.*;
 
-public class TestFileGenerator {
+public class ClientFilesGenerator implements CodeGenerator {
+    private static final String DEFAULT_CLIENTS_PATH = "main/java/clients";
     private static final String DEFAULT_CLIENTS_PACKAGE = "clients";
 
-    public static PsiFile createTestClassFile(Project project,
-                                              PsiDirectory directory,
-                                              String packageName,
-                                              String operationName,
-                                              List<String> tests) {
-        try {
-            FileTemplate template = FileTemplateManager
-                    .getInstance(project)
-                    .getInternalTemplate("TestClassTemplate.java");
+    @Override
+    public void generateCode(PsiDirectory directory, GenerationContext context) {
+        Map<String, List<PathItemWithEndPoint>> controllers = groupPathsByTags(context.getOpenAPI());
+        PsiDirectory clientsDir = createNestedDirectories(context.getProject(), directory, DEFAULT_CLIENTS_PATH);
 
-            StringBuilder testsContent = new StringBuilder();
-            tests.forEach(test -> testsContent.append(test).append("\n"));
-
-            Properties properties = new Properties();
-            properties.setProperty("PACKAGE_NAME", packageName != null ? packageName : "");
-            properties.setProperty("OPERATION_NAME", operationName != null ? operationName : "Unknown");
-            properties.setProperty("TESTS", testsContent.toString());
-
-            String fileContent = template.getText(properties);
-
-            return createFile(project, operationName + "Test.java", fileContent, directory);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create test file", e);
+        Map<String, List<String>> methodNamesByClients = new HashMap<>();
+        for (Map.Entry<String, List<PathItemWithEndPoint>> entry : controllers.entrySet()) {
+            List<String> methodNames = createClientClassFile(context,
+                    clientsDir,
+                    entry.getKey(),
+                    entry.getValue());
+            methodNamesByClients.put(entry.getKey(), methodNames);
         }
+        context.setMethodNamesByClients(methodNamesByClients);
     }
 
-    public static List<String> createClientClassFile(GenerationContext context,
+    private List<String> createClientClassFile(GenerationContext context,
                                                      PsiDirectory outputDirectory,
                                                      String controllerName,
                                                      List<PathItemWithEndPoint> paths) {
@@ -79,28 +72,11 @@ public class TestFileGenerator {
             properties.setProperty("OPERATIONS", mapToString(operationsWithPathAndMethod));
 
             String fileContent = template.getText(properties);
-            PsiFile createdFile = createFile(context.getProject(), clientName + ".java", fileContent, outputDirectory);
+            PsiFile createdFile = createFile(context.getProject(), fileContent, outputDirectory, clientName + ".java", JavaFileType.INSTANCE);
             context.getClientFiles().put(clientName, createdFile);
             return methodNames;
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate API clients", e);
         }
-    }
-
-    private static PsiFile createFile(Project project, String fileName, String fileContent, PsiDirectory directory) {
-        return WriteCommandAction.writeCommandAction(project)
-                .compute(() -> {
-                    PsiFileFactory factory = PsiFileFactory.getInstance(project);
-                    PsiFile psiFile = factory.createFileFromText(
-                            fileName,
-                            JavaFileType.INSTANCE,
-                            fileContent
-                    );
-                    PsiFile prevFile = directory.findFile(fileName);
-                    if (prevFile != null) {
-                        return prevFile;
-                    }
-                    return (PsiFile) directory.add(psiFile);
-                });
     }
 }

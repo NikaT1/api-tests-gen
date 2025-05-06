@@ -22,12 +22,12 @@ import java.io.File;
 
 @UtilityClass
 public class FileUtils {
-    public static void createFile(@NotNull Project project,
-                                  @NotBlank String fileContent,
-                                  @NotNull PsiDirectory directory,
-                                  @NotBlank String fileName,
-                                  @NotNull FileType fileType) {
-        WriteCommandAction.writeCommandAction(project)
+    public static PsiFile createFile(@NotNull Project project,
+                                     @NotBlank String fileContent,
+                                     @NotNull PsiDirectory directory,
+                                     @NotBlank String fileName,
+                                     @NotNull FileType fileType) {
+        return WriteCommandAction.writeCommandAction(project)
                 .compute(() -> {
                     PsiFileFactory factory = PsiFileFactory.getInstance(project);
                     PsiFile psiFile = factory.createFileFromText(
