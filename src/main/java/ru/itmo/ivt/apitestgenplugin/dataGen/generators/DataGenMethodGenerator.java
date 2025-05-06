@@ -1,4 +1,4 @@
-package ru.itmo.ivt.apitestgenplugin.dataGen;
+package ru.itmo.ivt.apitestgenplugin.dataGen.generators;
 
 import io.swagger.v3.oas.models.media.Schema;
 import ru.itmo.ivt.apitestgenplugin.model.DataGenMethod;
@@ -9,7 +9,7 @@ import java.util.List;
 import static ru.itmo.ivt.apitestgenplugin.util.SchemaUtils.*;
 import static ru.itmo.ivt.apitestgenplugin.util.StringUtils.capitalize;
 
-public record DataGenMethodManager(String modelName, Schema<?> schema) {
+public record DataGenMethodGenerator(String modelName, Schema<?> schema) {
     public List<String> getDataGenImports() {
         return List.of("java.util.*", "com.github.javafaker.Faker", "models." + modelName);
     }

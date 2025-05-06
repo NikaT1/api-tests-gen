@@ -1,5 +1,6 @@
 package ru.itmo.ivt.apitestgenplugin.configGen.generator.impl;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiDirectory;
@@ -19,16 +20,18 @@ public class MavenDependencyGenerator implements ConfigGenerator {
         Project project = context.getProject();
         XmlFile mavenFile = getMavenFile(srcDir, project);
         checkMavenFile(project, mavenFile);
-        MavenDomProjectModel model = MavenDomUtil.getMavenDomModel(mavenFile, MavenDomProjectModel.class);
-        if (model == null) {
-            return;
-        }
-        addRestAssuredDependency(project, model);
-        addJacksonDependency(project, model);
-        addJunit5Dependency(project, model);
-        addLombokDependency(project, model);
-        addJavaFakerDependency(project, model);
-        addAllureDependencyAndPlugins(project, model);
+        ApplicationManager.getApplication().invokeLater(() -> {
+            MavenDomProjectModel model = MavenDomUtil.getMavenDomModel(mavenFile, MavenDomProjectModel.class);
+            if (model == null) {
+                return;
+            }
+            addRestAssuredDependency(project, model);
+            addJacksonDependency(project, model);
+            addJunit5Dependency(project, model);
+            addLombokDependency(project, model);
+            addJavaFakerDependency(project, model);
+            addAllureDependencyAndPlugins(project, model);
+        });
     }
 
     private void addRestAssuredDependency(Project project, MavenDomProjectModel model) {

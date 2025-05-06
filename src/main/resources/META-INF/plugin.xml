@@ -32,6 +32,9 @@
         <internalFileTemplate name="PropertiesHelperTemplate.java"/>
         <internalFileTemplate name="PropertiesTemplate.properties"/>
         <internalFileTemplate name="RestAssuredTemplate.java"/>
+        <notificationGroup id="API Test Generator"
+                           displayType="TOOL_WINDOW"
+                           isLogByDefault="true"/>
     </extensions>
     <actions>
         <action id="ru.itmo.ivt.apitestgenplugin.StartPluginAction"

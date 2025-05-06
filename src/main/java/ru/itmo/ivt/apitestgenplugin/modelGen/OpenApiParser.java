@@ -1,12 +1,16 @@
 package ru.itmo.ivt.apitestgenplugin.modelGen;
 
+import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiFile;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.SystemProperties;
@@ -68,10 +72,19 @@ public class OpenApiParser {
         }
     }
 
-    private PsiFile getRootPsiFile(Project project) {
-        return createPsiDirectoryFromPath(project, outputDirectory)
-                .findSubdirectory(outputPackage)
-                .findFile(getRootFileName());
+    private PsiFile getRootPsiFile(@NotNull Project project) {
+        return ReadAction.compute(() -> {
+            ProgressManager.checkCanceled();
+            PsiDirectory outputDir = createPsiDirectoryFromPath(project, outputDirectory);
+            if (outputDir == null) {
+                throw new RuntimeException("Output directory not found: " + outputDirectory);
+            }
+            PsiDirectory packageDir = outputDir.findSubdirectory(outputPackage);
+            if (packageDir == null) {
+                throw new RuntimeException("Package directory not found: " + outputPackage);
+            }
+            return packageDir.findFile(getRootFileName());
+        });
     }
 
     private String getRootFileName() {

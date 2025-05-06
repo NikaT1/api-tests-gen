@@ -1,6 +1,8 @@
 package ru.itmo.ivt.apitestgenplugin.configGen.util;
 
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDirectory;
@@ -10,7 +12,6 @@ import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
 import lombok.experimental.UtilityClass;
 import org.jetbrains.idea.maven.dom.model.*;
-import org.jetbrains.idea.maven.project.MavenProject;
 import org.jetbrains.idea.maven.project.MavenProjectsManager;
 
 @UtilityClass
@@ -18,20 +19,26 @@ public class MavenFileUtil {
     private static final String DEFAULT_MAVEN_FILE_NAME = "pom.xml";
 
     public static XmlFile getMavenFile(PsiDirectory srcDir, Project project) {
-        PsiDirectory projectPsiDir = srcDir.getParentDirectory();
-        assert projectPsiDir != null;
-        VirtualFile projectDir = projectPsiDir.getVirtualFile();
-        VirtualFile pomFile = projectDir.findChild(DEFAULT_MAVEN_FILE_NAME);
-        assert pomFile != null;
-        PsiFile psiFile = PsiManager.getInstance(project).findFile(pomFile);
-        assert psiFile instanceof XmlFile;
-        return (XmlFile) psiFile;
+        return ReadAction.compute(() -> {
+            ProgressManager.checkCanceled();
+            PsiDirectory projectPsiDir = srcDir.getParentDirectory();
+            if (projectPsiDir == null) return null;
+
+            VirtualFile projectDir = projectPsiDir.getVirtualFile();
+            VirtualFile pomFile = projectDir.findChild(DEFAULT_MAVEN_FILE_NAME);
+            if (pomFile == null) return null;
+
+            PsiFile psiFile = PsiManager.getInstance(project).findFile(pomFile);
+            return psiFile instanceof XmlFile ? (XmlFile) psiFile : null;
+        });
     }
 
     public static void checkMavenFile(Project project, XmlFile pomFile) {
-        MavenProjectsManager mavenManager = MavenProjectsManager.getInstance(project);
-        MavenProject mavenProject = mavenManager.findProject(pomFile.getVirtualFile());
-        assert mavenProject != null;
+        ReadAction.compute(() -> {
+            ProgressManager.checkCanceled();
+            MavenProjectsManager mavenManager = MavenProjectsManager.getInstance(project);
+            return mavenManager.findProject(pomFile.getVirtualFile()) != null;
+        });
     }
 
     public static void addMavenDependency(Project project, MavenDomProjectModel model, String group, String artifact) {
@@ -47,6 +54,7 @@ public class MavenFileUtil {
                                           String group, String artifact,
                                           String version, String scope) {
         WriteCommandAction.runWriteCommandAction(project, () -> {
+            ProgressManager.checkCanceled();
             try {
                 MavenDomDependency dependency = model.getDependencies().addDependency();
                 dependency.getGroupId().setStringValue(group);
@@ -64,6 +72,7 @@ public class MavenFileUtil {
 
     public static void addProperty(Project project, MavenDomProjectModel model, String name, String value) {
         WriteCommandAction.runWriteCommandAction(project, () -> {
+            ProgressManager.checkCanceled();
             try {
                 MavenDomProperties properties = model.getProperties();
                 XmlTag propertiesTag = properties.getXmlTag();
@@ -79,6 +88,7 @@ public class MavenFileUtil {
                                         String group, String artifact,
                                         String version) {
         WriteCommandAction.runWriteCommandAction(project, () -> {
+            ProgressManager.checkCanceled();
             try {
                 MavenDomDependency dependency = model.getDependencyManagement().getDependencies().addDependency();
                 dependency.getGroupId().setStringValue(group);
