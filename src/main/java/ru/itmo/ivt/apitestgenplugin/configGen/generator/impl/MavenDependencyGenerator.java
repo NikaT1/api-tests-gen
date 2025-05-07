@@ -1,8 +1,10 @@
 package ru.itmo.ivt.apitestgenplugin.configGen.generator.impl;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Computable;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.xml.XmlFile;
 import lombok.RequiredArgsConstructor;
@@ -20,18 +22,16 @@ public class MavenDependencyGenerator implements ConfigGenerator {
         Project project = context.getProject();
         XmlFile mavenFile = getMavenFile(srcDir, project);
         checkMavenFile(project, mavenFile);
-        ApplicationManager.getApplication().invokeLater(() -> {
-            MavenDomProjectModel model = MavenDomUtil.getMavenDomModel(mavenFile, MavenDomProjectModel.class);
-            if (model == null) {
-                return;
-            }
-            addRestAssuredDependency(project, model);
-            addJacksonDependency(project, model);
-            addJunit5Dependency(project, model);
-            addLombokDependency(project, model);
-            addJavaFakerDependency(project, model);
-            addAllureDependencyAndPlugins(project, model);
-        });
+        MavenDomProjectModel model = ReadAction.compute(() -> MavenDomUtil.getMavenDomModel(mavenFile, MavenDomProjectModel.class));
+        if (model == null) {
+            return;
+        }
+        addRestAssuredDependency(project, model);
+        addJacksonDependency(project, model);
+        addJunit5Dependency(project, model);
+        addLombokDependency(project, model);
+        addJavaFakerDependency(project, model);
+        addAllureDependencyAndPlugins(project, model);
     }
 
     private void addRestAssuredDependency(Project project, MavenDomProjectModel model) {
@@ -73,8 +73,10 @@ public class MavenDependencyGenerator implements ConfigGenerator {
     }
 
     private void addBuildPlugins(Project project, MavenDomProjectModel model) {
-        MavenDomBuild build = model.getBuild();
-        MavenDomPlugins plugins = build.getPlugins();
+        MavenDomBuild build = ApplicationManager.getApplication().runReadAction(
+                (Computable<MavenDomBuild>) model::getBuild);
+        MavenDomPlugins plugins = ApplicationManager.getApplication().runReadAction(
+                (Computable<MavenDomPlugins>) build::getPlugins);
         WriteCommandAction.runWriteCommandAction(project, () -> {
             try {
                 addCompilerPlugin(plugins);

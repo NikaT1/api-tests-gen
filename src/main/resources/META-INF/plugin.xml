@@ -38,7 +38,7 @@
     </extensions>
     <actions>
         <action id="ru.itmo.ivt.apitestgenplugin.StartPluginAction"
-                class="ru.itmo.ivt.apitestgenplugin.StartPluginAction" text="StartPluginAction">
+                class="ru.itmo.ivt.apitestgenplugin.StartPluginAction" text="Generate API Tests">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt SLASH"/>
         </action>
