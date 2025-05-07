@@ -15,7 +15,7 @@ import static ru.itmo.ivt.apitestgenplugin.util.FileUtils.createNestedDirectorie
 
 public class PropertiesManagerFileGenerator implements ConfigGenerator {
     private static final String DEFAULT_PROPERTY_MANAGER_NAME = "TestPropertiesManager.java";
-    private static final String DEFAULT_MANAGER_PACKAGE = "main/resources/java/manager";
+    private static final String DEFAULT_MANAGER_PACKAGE = "main/java/manager";
 
     @Override
     public void prepareConfigFiles(GenerationContext context, PsiDirectory srcDir) {

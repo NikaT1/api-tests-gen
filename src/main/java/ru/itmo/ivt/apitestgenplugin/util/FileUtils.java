@@ -28,18 +28,13 @@ public class FileUtils {
                                      @NotNull PsiDirectory directory,
                                      @NotBlank String fileName,
                                      @NotNull FileType fileType) {
-        return WriteCommandAction.writeCommandAction(project)
-                .compute(() -> ReadAction.compute(() -> {
-                    ProgressManager.checkCanceled();
-                    PsiFileFactory factory = PsiFileFactory.getInstance(project);
-                    PsiFile psiFile = factory.createFileFromText(
-                            fileName,
-                            fileType,
-                            fileContent
-                    );
-                    PsiFile prevFile = directory.findFile(fileName);
-                    return prevFile != null ? prevFile : (PsiFile) directory.add(psiFile);
-                }));
+        return WriteCommandAction.writeCommandAction(project).compute(() -> {
+            ProgressManager.checkCanceled();
+            PsiFileFactory factory = PsiFileFactory.getInstance(project);
+            PsiFile psiFile = factory.createFileFromText(fileName, fileType, fileContent);
+            PsiFile prevFile = directory.findFile(fileName);
+            return prevFile != null ? prevFile : (PsiFile) directory.add(psiFile);
+        });
     }
 
     public static PsiDirectory getSrcDirectory(@NotNull Project project) {
@@ -69,53 +64,51 @@ public class FileUtils {
     public static PsiDirectory createNestedDirectories(@NotNull Project project,
                                                        @NotNull PsiDirectory baseDir,
                                                        @NotBlank String path) {
-        return ReadAction.compute(() -> {
-            String[] parts = path.split("/");
-            PsiDirectory currentDir = baseDir;
-
-            for (String dirName : parts) {
-                if (dirName.isEmpty()) continue;
-                ProgressManager.checkCanceled();
-                PsiDirectory checkDir = currentDir;
-
-                currentDir = WriteCommandAction.writeCommandAction(project).compute(() -> {
-                    PsiDirectory existingDir = checkDir.findSubdirectory(dirName);
-                    return existingDir != null ? existingDir : checkDir.createSubdirectory(dirName);
-                });
-
-                if (currentDir == null) break;
+        String[] parts = path.split("/");
+        PsiDirectory currentDir = baseDir;
+        for (String dirName : parts) {
+            if (dirName.isEmpty()) continue;
+            ProgressManager.checkCanceled();
+            PsiDirectory checkDir = currentDir;
+            PsiDirectory existingDir = ReadAction.compute(() -> checkDir.findSubdirectory(dirName));
+            if (existingDir != null) {
+                currentDir = existingDir;
+                continue;
             }
-            return currentDir;
-        });
+            currentDir = WriteCommandAction.writeCommandAction(project).compute(() ->
+                    checkDir.createSubdirectory(dirName)
+            );
+            if (currentDir == null) break;
+        }
+        return currentDir;
     }
 
     public static PsiDirectory createSubDirectory(@NotNull Project project,
                                                   @NotNull PsiDirectory baseDir,
                                                   @NotBlank String dir) {
-        return ReadAction.compute(() ->
-                WriteCommandAction.writeCommandAction(project).compute(() -> {
-                    ProgressManager.checkCanceled();
-                    PsiDirectory existingDir = baseDir.findSubdirectory(dir);
-                    return existingDir != null ? existingDir : baseDir.createSubdirectory(dir);
-                })
+        PsiDirectory existingDir = ReadAction.compute(() -> baseDir.findSubdirectory(dir));
+        if (existingDir != null) {
+            return existingDir;
+        }
+        return WriteCommandAction.writeCommandAction(project).compute(() ->
+                baseDir.createSubdirectory(dir)
         );
     }
 
     public static PsiDirectory createPsiDirectoryFromPath(Project project, String targetDir) {
-        return ReadAction.compute(() -> {
-            ProgressManager.checkCanceled();
-            VirtualFile virtualFile = LocalFileSystem.getInstance().findFileByPath(targetDir);
-
-            if (virtualFile == null) {
-                virtualFile = WriteCommandAction.writeCommandAction(project)
-                        .compute(() -> createDirectory(targetDir));
-                if (virtualFile == null) {
-                    throw new RuntimeException("Failed to create directory: " + targetDir);
-                }
-            }
-
+        VirtualFile virtualFile = ReadAction.compute(() ->
+                LocalFileSystem.getInstance().findFileByPath(targetDir)
+        );
+        if (virtualFile != null) {
             return PsiManager.getInstance(project).findDirectory(virtualFile);
-        });
+        }
+        virtualFile = WriteCommandAction.writeCommandAction(project).compute(() ->
+                createDirectory(targetDir)
+        );
+        if (virtualFile == null) {
+            throw new RuntimeException("Failed to create directory: " + targetDir);
+        }
+        return PsiManager.getInstance(project).findDirectory(virtualFile);
     }
 
     private static VirtualFile createDirectory(String path) {
