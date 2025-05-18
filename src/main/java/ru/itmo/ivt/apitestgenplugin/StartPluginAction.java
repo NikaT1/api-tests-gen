@@ -37,6 +37,7 @@ public class StartPluginAction extends AnAction {
             ProgressManager.getInstance().run(new Task.Backgroundable(project, "Generating API Tests", true) {
                 @Override
                 public void run(@NotNull ProgressIndicator mainIndicator) {
+                    long startTime = System.nanoTime();
                     GenerationContext context = new GenerationContext();
                     context.setProject(project);
                     context.setUserInput(userInput);
@@ -55,6 +56,9 @@ public class StartPluginAction extends AnAction {
 
                     runSubTask(mainIndicator, "Generating API tests...",
                             () -> testGenerationManager.generateClientsAndTests(srcDir, context));
+                    long endTime = System.nanoTime();
+                    long duration = (endTime - startTime);
+                    System.out.println("Time " + duration);
                 }
 
                 private void runSubTask(ProgressIndicator mainIndicator, String text, Runnable task) {

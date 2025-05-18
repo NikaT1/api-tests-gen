@@ -54,6 +54,28 @@ public class StringUtils {
                 .collect(Collectors.joining());
     }
 
+    public static String snakeToCamelCase(String str) {
+        if (str == null || str.isEmpty()) {
+            return str;
+        }
+        StringBuilder camelCaseStr = new StringBuilder();
+        boolean nextUpperCase = false;
+        for (int i = 0; i < str.length(); i++) {
+            char currentChar = str.charAt(i);
+            if (currentChar == '_') {
+                nextUpperCase = true;
+            } else {
+                if (nextUpperCase) {
+                    camelCaseStr.append(Character.toUpperCase(currentChar));
+                    nextUpperCase = false;
+                } else {
+                    camelCaseStr.append(Character.toLowerCase(currentChar));
+                }
+            }
+        }
+        return camelCaseStr.toString();
+    }
+
     public static String mapToString(Map<String, String> map) {
         return map.entrySet().stream()
                 .map(entry -> entry.getKey() + "=" + entry.getValue())

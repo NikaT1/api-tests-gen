@@ -8,10 +8,11 @@ import java.util.List;
 
 import static ru.itmo.ivt.apitestgenplugin.util.SchemaUtils.*;
 import static ru.itmo.ivt.apitestgenplugin.util.StringUtils.capitalize;
+import static ru.itmo.ivt.apitestgenplugin.util.StringUtils.snakeToCamelCase;
 
 public record DataGenMethodGenerator(String modelName, Schema<?> schema) {
     public List<String> getDataGenImports() {
-        return List.of("java.util.*", "com.github.javafaker.Faker", "models." + modelName);
+        return List.of("models." + modelName);
     }
 
     public List<DataGenMethod> generateMethods() {
@@ -26,7 +27,7 @@ public record DataGenMethodGenerator(String modelName, Schema<?> schema) {
         StringBuilder fields = new StringBuilder();
         schema.getProperties().forEach((name, prop) -> {
             String value = getFieldValue(prop, true);
-            fields.append(name).append("-").append(value).append(" ");
+            fields.append(capitalize(snakeToCamelCase(name))).append("-").append(value).append(" ");
         });
         return List.of(new DataGenMethod("generateCorrect" + modelName, fields.toString().trim()));
     }
@@ -39,7 +40,7 @@ public record DataGenMethodGenerator(String modelName, Schema<?> schema) {
         schema.getRequired().forEach(name -> {
             Schema<?> prop = (Schema<?>) schema.getProperties().get(name);
             String value = getFieldValue(prop, true);
-            fields.append(name).append("-").append(value).append(" ");
+            fields.append(capitalize(snakeToCamelCase(name))).append("-").append(value).append(" ");
         });
         return List.of(new DataGenMethod("generateOnlyRequired" + modelName, fields.toString().trim()));
     }
@@ -52,7 +53,7 @@ public record DataGenMethodGenerator(String modelName, Schema<?> schema) {
                 StringBuilder fields = new StringBuilder();
                 schema.getProperties().forEach((otherName, otherProp) -> {
                     String value = name.equals(otherName) ? incorrectValue : getFieldValue(otherProp, true);
-                    fields.append(otherName).append("-").append(value).append(" ");
+                    fields.append(capitalize(snakeToCamelCase(otherName))).append("-").append(value).append(" ");
                 });
                 methods.add(new DataGenMethod(
                         "generateIncorrect" + modelName + "By" + capitalize(name),

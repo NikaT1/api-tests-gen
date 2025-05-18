@@ -8,6 +8,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiFile;
 import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import jakarta.validation.constraints.NotNull;
@@ -25,6 +26,7 @@ import java.util.Map;
 
 import static ru.itmo.ivt.apitestgenplugin.util.FileUtils.createPsiDirectoryFromPath;
 import static ru.itmo.ivt.apitestgenplugin.util.OpenApiUtils.getModelsByControllers;
+import static ru.itmo.ivt.apitestgenplugin.util.OpenApiUtils.getModelsByNames;
 
 @AllArgsConstructor
 public class OpenApiParser {
@@ -56,12 +58,11 @@ public class OpenApiParser {
         refreshFilesystem(outputDirectory);
         packagesManager.clearModelFile(getRootPsiFile(context.getProject()));
 
-        // manage data models by packages
-        Map<String, List<String>> modelsByControllers = getModelsByControllers(result.getOpenAPI().getPaths());
-        // Map<String, PsiFile> models = packagesManager.splitModelFilesByDirectories(modelsByControllers, getModelsPackagePath(), context.getProject());
+        // manage data models by names
+        Map<String, Schema> modelsByNames = getModelsByNames(result.getOpenAPI());
 
         context.setOpenAPI(result.getOpenAPI());
-        //context.setModelFilesByPackages(models);
+        context.setModelSchemasByName(modelsByNames);
         return context;
     }
 

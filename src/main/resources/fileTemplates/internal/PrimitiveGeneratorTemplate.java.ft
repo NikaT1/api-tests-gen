@@ -1,0 +1,53 @@
+package models.generators;
+
+import io.github.regychang.java.faker.Faker;
+import io.github.regychang.java.faker.Options;
+
+import java.time.*;
+
+public final class PrimitiveDataGenerator {
+   private static final Faker faker = new Faker();
+
+   public static boolean randomBoolean() {
+       return faker.fakeData(Boolean.class);
+   }
+
+   public static int randomInt() {
+       return faker.fakeData(Integer.class);
+   }
+
+   public static double randomDouble() {
+       return faker.fakeData(Double.class);
+   }
+
+   public static String randomString() {
+       return faker.fakeData(String.class);
+   }
+
+   public static int randomInt(int min, int max) {
+       Options options = new Options().withRandomBoundaries(min, max);
+       return faker.fakeData(Integer.class, options);
+   }
+
+   public static double randomDouble(double min, double max) {
+       return min + (max - min) * faker.fakeData(Double.class);
+   }
+
+   public static String randomString(int length) {
+       Options options = new Options().withRandomBoundaries(length, length);
+       return faker.fakeData(String.class, options);
+   }
+
+   public static String randomString(int minLength, int maxLength) {
+       Options options = new Options().withRandomBoundaries(minLength, maxLength);
+       return faker.fakeData(String.class, options);
+   }
+
+   public static LocalDate randomDate() {
+       return LocalDate.of(
+               randomInt(1900, 2100),
+               randomInt(1, 12),
+               randomInt(1, 28)
+       );
+   }
+}

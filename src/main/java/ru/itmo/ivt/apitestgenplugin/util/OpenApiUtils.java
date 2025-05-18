@@ -70,6 +70,13 @@ public class OpenApiUtils {
                 ));
     }
 
+    public static Map<String, Schema> getModelsByNames (OpenAPI openAPI) {
+        if (openAPI == null || openAPI.getComponents() == null || openAPI.getComponents().getSchemas() == null) {
+            return Map.of();
+        }
+        return openAPI.getComponents().getSchemas();
+    }
+
     public static List<String> extractSchemasFromOperation(Operation operation) {
         List<String> schemas = new ArrayList<>();
 

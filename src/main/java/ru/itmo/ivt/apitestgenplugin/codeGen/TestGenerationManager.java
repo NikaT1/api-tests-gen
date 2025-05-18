@@ -13,7 +13,7 @@ public class TestGenerationManager {
     private final List<CodeGenerator> generators = new ArrayList<>();
 
     public void generateClientsAndTests(PsiDirectory srcDir, GenerationContext context) {
-        assert context.getModelFilesByPackages() != null;
+        assert context.getModelSchemasByName() != null;
         assert context.getOpenAPI() != null;
         assert context.getOpenAPI().getPaths() != null;
         prepareGenerators();

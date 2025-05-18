@@ -18,6 +18,7 @@ import static ru.itmo.ivt.apitestgenplugin.util.FileUtils.*;
 public class RestAssuredConfigFileGenerator implements ConfigGenerator {
     private static final String DEFAULT_REST_ASSURED_CONFIG_NAME = "RestAssuredConfiguration.java";
     private static final String DEFAULT_CONFIG_PACKAGE = "main/java/config";
+    private static final String DEFAULT_CONFIG_PACKAGE_NAME = "config";
 
     @Override
     public void prepareConfigFiles(GenerationContext context, PsiDirectory srcDir) {
@@ -25,7 +26,7 @@ public class RestAssuredConfigFileGenerator implements ConfigGenerator {
         UserInput userInput = context.getUserInput();
         PsiDirectory configDir = createNestedDirectories(project, srcDir, DEFAULT_CONFIG_PACKAGE);
 
-        createRestAssuredConfigFile(project, configDir, DEFAULT_CONFIG_PACKAGE, userInput.authType());
+        createRestAssuredConfigFile(project, configDir, DEFAULT_CONFIG_PACKAGE_NAME, userInput.authType());
     }
 
     private void createRestAssuredConfigFile(Project project,

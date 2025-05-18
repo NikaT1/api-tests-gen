@@ -155,7 +155,7 @@ public class SchemaUtils {
             }
             int length = stringSchema.getMaxLength() != null ?
                     Math.max(1, stringSchema.getMaxLength() / 2) : 10;
-            return "Faker.instance().lorem().characters(" + length + ")";
+            return "randomString(" + length + ")";
         }
         else if (schema instanceof IntegerSchema) {
             if (!correct) {
@@ -165,7 +165,16 @@ public class SchemaUtils {
             if (intSchema.getEnum() != null && !intSchema.getEnum().isEmpty()) {
                 return intSchema.getEnum().get(0).toString();
             }
-            return "Faker.instance().number().randomNumber()";
+            if (intSchema.getMaximum() != null && intSchema.getMinimum() != null) {
+                return "randomInt(" + intSchema.getMinimum() + "," + intSchema.getMaximum() + ")";
+            }
+            if (intSchema.getMaximum() != null) {
+                return "randomInt(" + intSchema.getMaximum().add(BigDecimal.TEN.negate()) + "," + intSchema.getMaximum() + ")";
+            }
+            if (intSchema.getMinimum() != null) {
+                return "randomInt(" + intSchema.getMinimum() + "," + intSchema.getMinimum().add(BigDecimal.TEN) + ")";
+            }
+            return "randomInt()";
         }
         else if (schema instanceof NumberSchema) {
             if (!correct) {
@@ -175,10 +184,10 @@ public class SchemaUtils {
             if (numSchema.getEnum() != null && !numSchema.getEnum().isEmpty()) {
                 return numSchema.getEnum().get(0).toString();
             }
-            return "Faker.instance().number().randomDouble(2, 1, 100)";
+            return "randomDouble()";
         }
         else if (schema instanceof BooleanSchema) {
-            return correct ? "true" : "false";
+            return correct ? "randomBoolean()" : "null";
         }
         else if (schema instanceof ArraySchema) {
             ArraySchema arraySchema = (ArraySchema) schema;
@@ -188,34 +197,23 @@ public class SchemaUtils {
             return "java.util.Arrays.asList(" + getFieldValue(arraySchema.getItems(), true) + ")";
         }
         else if (schema instanceof ObjectSchema) {
-            return correct ? "new Object()" : "null";
+            return correct ? schema.getName() + "Generator.generateCorrect" + schema.getName() + "()" : "null";
         }
         else if (schema instanceof DateTimeSchema) {
-            return correct ?
-                    "java.time.OffsetDateTime.now().format(java.time.format.DateTimeFormatter.ISO_DATE_TIME)" :
-                    "\"invalid-date\"";
+            return correct ? "generateDate()" : "\"invalid-date\"";
         }
         else if (schema instanceof DateSchema) {
-            return correct ?
-                    "java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ISO_DATE)" :
-                    "\"invalid-date\"";
+            return correct ? "generateDate()" : "\"invalid-date\"";
         }
         else if (schema instanceof EmailSchema) {
-            return correct ?
-                    "\"user@example.com\"" :
-                    "\"invalid-email\"";
+            return correct ? "\"user@example.com\"" : "\"invalid-email\"";
         }
         else if (schema instanceof UUIDSchema) {
-            return correct ?
-                    "java.util.UUID.randomUUID().toString()" :
-                    "\"invalid-uuid\"";
+            return correct ? "UUID.randomUUID().toString()" : "\"invalid-uuid\"";
         }
         else if (schema instanceof PasswordSchema) {
-            return correct ?
-                    "\"Password1!\"" :
-                    "\"weak\"";
+            return correct ? "\"Password1!\"" : "\"weak\"";
         }
-
         return "null";
     }
 
@@ -230,7 +228,7 @@ public class SchemaUtils {
                 return "\"invalid-enum-value\"";
             }
             if (stringSchema.getMaxLength() != null) {
-                return "Faker.instance().lorem().characters(" + (stringSchema.getMaxLength() + 10) + ")";
+                return "randomString(" + (stringSchema.getMaxLength() + 10) + ")";
             }
             if (stringSchema.getPattern() != null) {
                 return "\"does-not-match-pattern\"";

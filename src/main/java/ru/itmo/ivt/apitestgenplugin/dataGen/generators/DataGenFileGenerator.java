@@ -33,7 +33,7 @@ public class DataGenFileGenerator {
             String fileContent = template.getText(properties);
             createFile(project, fileContent, directory, manager.modelName() + "Generator.java", JavaFileType.INSTANCE);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to create config file", e);
+            throw new RuntimeException("Failed to create generator file", e);
         }
     }
 }

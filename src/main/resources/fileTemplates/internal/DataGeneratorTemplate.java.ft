@@ -6,6 +6,8 @@ package ${PACKAGE_NAME};
 import ${import};
 #end
 
+import static models.generators.PrimitiveDataGenerator.*;
+
 #if (${MODEL} != "")
 public final class ${MODEL}Generator {
 #else
@@ -19,11 +21,13 @@ public final class UnknownGenerator {
     public static ${MODEL} $method_name() {
         ${MODEL} object = new ${MODEL}();
         #foreach( $field in $fields.split(" ") )
-            #set( $field_params = $method.split("-") )
-            #set( $field_name = $field_params[0] )
-            #set( $field_value = $field_params[1] )
-            object.set${field.name}(${field_value});
-        #end;
+        #set( $field_params = $field.split("-") )
+        #if ($field_params.length == 2)
+        #set( $field_name = $field_params[0] )
+        #set( $field_value = $field_params[1] )
+        object.set${field_name}(${field_value});
+        #end
+        #end
         return object;
     }
 #end
